@@ -1,0 +1,15 @@
+rules_version='2';
+service cloud.firestore { match /databases/{d}/documents {
+ function me(){return request.auth!=null;}
+ function admin(){return me()&&request.auth.token.email_verified&&request.auth.token.email in ['bendalehimanshu5@gmail.com','virajrajput07@gmail.com'];}
+ match /businesses/{id}{allow read:if resource.data.verified==true||admin()||(me()&&resource.data.uid==request.auth.uid);
+  allow create:if me()&&request.resource.data.uid==request.auth.uid&&request.resource.data.verified==false;allow update,delete:if admin();}
+ match /services/{id}{allow read:if true;allow write:if admin();}
+ match /orders/{id}{allow read:if admin()||(me()&&resource.data.uid==request.auth.uid);
+  allow create:if me()&&request.resource.data.uid==request.auth.uid;allow update,delete:if admin();}
+ match /threads/{id}{allow read,update:if admin()||(me()&&resource.data.uid==request.auth.uid);
+  allow create:if me()&&request.resource.data.uid==request.auth.uid;
+  match /messages/{m}{allow read,create:if admin()||(me()&&get(/databases/$(d)/documents/threads/$(id)).data.uid==request.auth.uid);}}
+ match /finance/{id}{allow read,write:if admin();}
+ match /work/{id}{allow read,write:if admin();}
+}}
