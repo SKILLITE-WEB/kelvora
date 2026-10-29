@@ -1,29 +1,36 @@
+import AdminPanel from './Admin.jsx'
+import {Notices,BizPage,Bell} from './Biz.jsx'
+import Bot from './Bot.jsx'
+import {Dash,Network,verify,VerifyPanel} from './Verified.jsx'
+import {Toasts,Spin,useBusy,toast} from './Ui.jsx'
 import Showcase,{Vid} from './Showcase.jsx'
-import {useState,useEffect} from 'react'
-import {Routes,Route,Link,Navigate} from 'react-router-dom'
+import {useState,useEffect,useRef} from 'react'
+import {Routes,Route,Link,Navigate,useNavigate,useLocation} from 'react-router-dom'
 import {collection,addDoc,updateDoc,deleteDoc,doc,onSnapshot,query,orderBy,serverTimestamp} from 'firebase/firestore'
 import {db,login,logout,useUser,useCol,isAdmin} from './firebase.js'
 import VIDEOS from './videos.js'
 
-const Need=({u,children})=>u===undefined?<p>Loading…</p>:u?children:<div className="card"><p>Please sign in to continue.</p><br/><button onClick={login}>Sign in with Google</button></div>
+const Need=({u,children})=>u===undefined?<div className="wrap"><Spin/></div>:u?children:<div className="card"><p>Please sign in to continue.</p><br/><button onClick={login}>Sign in with Google</button></div>
 
-function Chat({tid,u}){const[ms,setMs]=useState([]);const[t,setT]=useState('')
+function Chat({tid,u}){const[ms,setMs]=useState([]);const[t,setT]=useState('');const[busy,run]=useBusy();const end=useRef()
 useEffect(()=>onSnapshot(query(collection(db,'threads',tid,'messages'),orderBy('t')),x=>setMs(x.docs.map(d=>d.data()))),[tid])
-const send=async e=>{e.preventDefault();if(!t.trim())return
-await addDoc(collection(db,'threads',tid,'messages'),{text:t,from:u.email,t:serverTimestamp()})
-await updateDoc(doc(db,'threads',tid),{last:t});setT('')}
-return <div><div className="msgs">{ms.map((m,i)=><div key={i} className={'m '+(m.from===u.email?'me':'')}><small>{m.from}</small><br/>{m.text}</div>)}</div>
-<form onSubmit={send} className="row" style={{display:'flex'}}><input value={t} onChange={e=>setT(e.target.value)} placeholder="Type a message…" style={{flex:1}}/><button>Send</button></form></div>}
+useEffect(()=>{end.current?.scrollIntoView({behavior:'smooth',block:'nearest'})},[ms.length])
+const send=e=>{e.preventDefault();const v=t.trim();if(!v)return;setT('');run(async()=>{await addDoc(collection(db,'threads',tid,'messages'),{text:v,from:u.email,t:serverTimestamp()});await updateDoc(doc(db,'threads',tid),{last:v})})}
+return <div><div className="msgs">{ms.length===0&&<small style={{color:'#8a87aa'}}>No messages yet.</small>}{ms.map((m,i)=>m.sys?<div key={i} className="m sys">{m.text}</div>:<div key={i} className={'m '+(m.from===u.email?'me':'')}><small>{m.from}</small><br/>{m.text}</div>)}<div ref={end}/></div>
+<form onSubmit={send} style={{display:'flex',gap:8,maxWidth:'none'}}><input value={t} onChange={e=>setT(e.target.value)} placeholder="Type a message…" style={{flex:1}}/><button disabled={busy}>Send</button></form></div>}
 
-function Threads({u,admin}){const th=useCol('threads',admin?null:['uid','==',u.uid]);const[o,setO]=useState(null)
-return <div className="grid">{th.length===0&&<p style={{color:'#8a87aa'}}>No inquiries yet.</p>}{th.map(x=><div className="card" key={x.id}><b>{x.subject}</b> <span className="tag">{x.status}</span><br/><small>{x.email}</small><p>{x.last}</p>
-<div className="row"><button className="s" onClick={()=>setO(o===x.id?null:x.id)}>Open chat</button>
-{admin&&<button className="s" onClick={()=>updateDoc(doc(db,'threads',x.id),{status:x.status==='open'?'closed':'open'})}>Toggle status</button>}</div>
+function Threads({u,admin}){const th=useCol('threads',admin?null:['members','array-contains',u.uid]);const[o,setO]=useState(null)
+const L=[...th].sort((a,b)=>(b.t?.seconds||0)-(a.t?.seconds||0))
+return <div className="grid">{L.length===0&&<p style={{color:'#8a87aa'}}>No chats yet.</p>}{L.map(x=><div className="card rv" key={x.id} style={{gridColumn:o===x.id?'1/-1':undefined}}>
+<div className="row"><b>{x.subject}</b><span className={'tag '+(x.type==='verify'?'v':'')}>{x.type==='verify'?'verification':x.type==='b2b'?'network':x.status}</span></div><small>{x.email}</small><p>{x.last}</p>
+{x.type==='verify'&&<VerifyPanel x={x} admin={admin}/>}
+<div className="row" style={{marginTop:10}}><button className="s" onClick={()=>setO(o===x.id?null:x.id)}>{o===x.id?'Close chat':'Open chat'}</button>
+{admin&&x.type!=='verify'&&<button className="s" onClick={()=>updateDoc(doc(db,'threads',x.id),{status:x.status==='open'?'closed':'open'})}>Toggle status</button>}</div>
 {o===x.id&&<Chat tid={x.id} u={u}/>}</div>)}</div>}
 
 function Contact({u}){const[s,setS]=useState('');const[m,setM]=useState('');const[ok,setOk]=useState(false)
 const go=async e=>{e.preventDefault()
-const r=await addDoc(collection(db,'threads'),{uid:u.uid,email:u.email,subject:s,last:m,status:'open',t:serverTimestamp()})
+const r=await addDoc(collection(db,'threads'),{uid:u.uid,members:[u.uid],email:u.email,subject:s,last:m,status:'open',t:serverTimestamp()})
 await addDoc(collection(db,'threads',r.id,'messages'),{text:m,from:u.email,t:serverTimestamp()});setS('');setM('');setOk(true)}
 return <form onSubmit={go}><input required placeholder="Subject" value={s} onChange={e=>setS(e.target.value)}/>
 <textarea required rows="4" placeholder="Tell us about your business and what you need" value={m} onChange={e=>setM(e.target.value)}/><button>Send inquiry</button>
@@ -57,12 +64,17 @@ return <main className="wrap"><h2><small>Store</small>Services & Marketing</h2>{
 <div className="grid">{s.length===0&&<p style={{color:'#8a87aa'}}>Services coming soon.</p>}{s.map(x=><div className="card rv" key={x.id}><span className="tag">{x.category}</span><h3>{x.title}</h3><p>{x.desc}</p><h3>₹{x.price}</h3>
 {u?<button onClick={()=>order(x)}>Order now</button>:<button onClick={login}>Sign in to order</button>}</div>)}</div></main>}
 
-function Register({u}){const[f,setF]=useState({name:'',category:'',desc:'',link:''});const[ok,setOk]=useState(false)
-const go=async e=>{e.preventDefault();await addDoc(collection(db,'businesses'),{...f,uid:u.uid,email:u.email,verified:false,t:serverTimestamp()});setOk(true)}
+function Register({u}){const[f,setF]=useState({name:'',category:'',desc:'',link:''});const[busy,run]=useBusy();const nav=useNavigate()
+const go=e=>{e.preventDefault();run(async()=>{
+const b=await addDoc(collection(db,'businesses'),{...f,uid:u.uid,email:u.email,verified:false,t:serverTimestamp()})
+const msg='Hi! I just registered "'+f.name+'" ('+f.category+'). Please verify my business.'
+const th=await addDoc(collection(db,'threads'),{uid:u.uid,members:[u.uid],email:u.email,subject:'Verification: '+f.name,last:msg,status:'open',type:'verify',bizId:b.id,t:serverTimestamp()})
+await addDoc(collection(db,'threads',th.id,'messages'),{text:msg,from:u.email,t:serverTimestamp()})
+await updateDoc(b,{threadId:th.id});toast('Submitted! Chat with our team in your dashboard');nav('/dashboard')})}
 return <main className="wrap"><h2><small>Join</small>Register your business</h2><Need u={u}><form onSubmit={go}>
 {[['name','Business name'],['category','Category (e.g. Retail, Food, Education)'],['link','Website or widget link (optional)']].map(([k,p])=><input key={k} required={k!=='link'} placeholder={p} value={f[k]} onChange={e=>setF({...f,[k]:e.target.value})}/>)}
-<textarea rows="4" placeholder="Describe your business" value={f.desc} onChange={e=>setF({...f,desc:e.target.value})}/><button>Submit for verification</button>
-{ok&&<small style={{color:'var(--l)'}}>Submitted! Once verified, your business appears in our portfolio.</small>}</form></Need></main>}
+<textarea rows="4" placeholder="Describe your business" value={f.desc} onChange={e=>setF({...f,desc:e.target.value})}/><button disabled={busy}>{busy?'Submitting…':'Submit for verification'}</button>
+<small style={{color:'#8a87aa'}}>A private verification chat opens with our team right after you submit.</small></form></Need></main>}
 
 function Dashboard({u}){const o=useCol('orders',['uid','==',u.uid]);const b=useCol('businesses',['uid','==',u.uid])
 return <main className="wrap"><h2><small>Dashboard</small>Welcome back</h2><h3>Orders</h3><div className="grid" style={{marginTop:12}}>{o.map(x=><div className="card" key={x.id}><b>{x.title}</b><p>₹{x.amount}</p><span className="tag">{x.status}</span> <span className="tag">{x.paid?'Paid':'Unpaid'}</span></div>)}</div>
@@ -85,19 +97,20 @@ if(!isAdmin(u))return <main className="wrap"><h2>No access</h2></main>
 const st=r=><select style={{width:'auto'}} value={r.status} onChange={e=>updateDoc(doc(db,'orders',r.id),{status:e.target.value})}>{['new','working','done'].map(s=><option key={s}>{s}</option>)}</select>
 const tabs={stats:<Stats/>,orders:<Manager title="Orders" col="orders" fields={[]} act={r=><>{st(r)}<button className="s" onClick={()=>updateDoc(doc(db,'orders',r.id),{paid:!r.paid})}>Paid?</button></>}/>,
 inquiries:<div style={{marginTop:16}}><Threads u={u} admin/></div>,
-businesses:<Manager title="Businesses" col="businesses" fields={[]} act={r=><button className="s" onClick={()=>updateDoc(doc(db,'businesses',r.id),{verified:!r.verified})}>Verify</button>}/>,
+businesses:<Manager title="Businesses" col="businesses" fields={[]} act={r=><button className="s" onClick={()=>verify(r)}>Verify</button>}/>,
 services:<Manager title="Services" col="services" fields={[{k:'title'},{k:'category'},{k:'desc'},{k:'price',n:1}]}/>,
 finance:<Manager title="Payments & expenses (type: income or expense)" col="finance" fields={[{k:'title'},{k:'type'},{k:'amount',n:1}]}/>,
 work:<Manager title="Future work & AI agent links" col="work" fields={[{k:'title'},{k:'link'},{k:'status'}]}/>}
 return <main className="wrap"><h2><small>Admin</small>Control panel</h2><div className="tabs">{Object.keys(tabs).map(k=><button key={k} className={t===k?'':'s'} onClick={()=>setT(k)}>{k}</button>)}</div>{tabs[t]}</main>}
 
+function Page({children}){const{pathname}=useLocation();useEffect(()=>{scrollTo({top:0})},[pathname]);return <div key={pathname} className="pg">{children}</div>}
 export default function App(){const u=useUser();const[o,setO]=useState(false)
-return <><div className="bg"><i/><i/><i/></div>
-<nav><Link to="/" className="logo">Kelvora</Link><button className="s burger" onClick={()=>setO(!o)}>☰</button>
+return <><div className="bg"><i/><i/><i/></div><Toasts/>
+<nav><Link to="/" className="logo">Kelvora</Link><button className="s burger" onClick={()=>setO(!o)}>{o?'✕':'☰'}</button>
 <div className={'menu'+(o?' open':'')} onClick={()=>setO(false)}><Link className="l" to="/">Home</Link><Link className="l" to="/portfolio">Portfolio</Link><Link className="l" to="/store">Store</Link><Link className="l" to="/register">Register</Link>
-{u&&<Link className="l" to="/dashboard">Dashboard</Link>}{isAdmin(u)&&<Link className="l" to="/admin">Admin</Link>}
+{u&&<><Link className="l" to="/network">Network</Link><Bell u={u}/></>}{isAdmin(u)&&<Link className="l" to="/admin">Admin</Link>}
 {u?<button className="s" onClick={logout}>Sign out</button>:<button onClick={login}>Sign in</button>}</div></nav>
-<Routes><Route path="/" element={<Home u={u}/>}/><Route path="/portfolio" element={<Portfolio/>}/><Route path="/store" element={<Store u={u}/>}/>
-<Route path="/register" element={<Register u={u}/>}/><Route path="/dashboard" element={<Need u={u}><Dashboard u={u}/></Need>}/>
-<Route path="/admin" element={<Need u={u}><Admin u={u}/></Need>}/><Route path="*" element={<Navigate to="/"/>}/></Routes>
-<footer>© 2026 Kelvora Infotech · kelvorainfortech.com</footer></>}
+<Page><Routes><Route path="/" element={<Home u={u}/>}/><Route path="/portfolio" element={<Portfolio/>}/><Route path="/store" element={<Store u={u}/>}/>
+<Route path="/register" element={<Register u={u}/>}/><Route path="/dashboard" element={<Need u={u}><div className="wrap"><Notices u={u}/></div><Dash u={u} Threads={Threads}/></Need>}/>
+<Route path="/admin" element={<Need u={u}><AdminPanel u={u} Threads={Threads}/></Need>}/><Route path="/network" element={<Need u={u}><Network u={u}/></Need>}/><Route path="/business/:id" element={<Need u={u}><BizPage u={u}/></Need>}/><Route path="*" element={<Navigate to="/"/>}/></Routes></Page>
+<Bot u={u}/><footer>© 2026 Kelvora Infotech · kelvorainfortech.com</footer></>}

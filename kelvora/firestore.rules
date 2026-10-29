@@ -2,14 +2,21 @@ rules_version='2';
 service cloud.firestore { match /databases/{d}/documents {
  function me(){return request.auth!=null;}
  function admin(){return me()&&request.auth.token.email_verified&&request.auth.token.email in ['bendalehimanshu5@gmail.com','virajrajput07@gmail.com'];}
+ function inT(t){return admin()||t.uid==request.auth.uid||('members' in t&&request.auth.uid in t.members);}
+ match /users/{id}{allow read:if admin()||(me()&&request.auth.uid==id);allow write:if admin();}
  match /businesses/{id}{allow read:if resource.data.verified==true||admin()||(me()&&resource.data.uid==request.auth.uid);
-  allow create:if me()&&request.resource.data.uid==request.auth.uid&&request.resource.data.verified==false;allow update,delete:if admin();}
+  allow create:if me()&&request.resource.data.uid==request.auth.uid&&request.resource.data.verified==false;
+  allow update:if admin()||(me()&&resource.data.uid==request.auth.uid&&request.resource.data.uid==resource.data.uid&&request.resource.data.verified==resource.data.verified);
+  allow delete:if admin();}
  match /services/{id}{allow read:if true;allow write:if admin();}
  match /orders/{id}{allow read:if admin()||(me()&&resource.data.uid==request.auth.uid);
-  allow create:if me()&&request.resource.data.uid==request.auth.uid;allow update,delete:if admin();}
- match /threads/{id}{allow read,update:if admin()||(me()&&resource.data.uid==request.auth.uid);
-  allow create:if me()&&request.resource.data.uid==request.auth.uid;
-  match /messages/{m}{allow read,create:if admin()||(me()&&get(/databases/$(d)/documents/threads/$(id)).data.uid==request.auth.uid);}}
+  allow create:if me()&&(admin()||request.resource.data.uid==request.auth.uid);allow update,delete:if admin();}
+ match /threads/{id}{allow read,update:if me()&&inT(resource.data);
+  allow create:if me()&&request.resource.data.uid==request.auth.uid&&(request.resource.data.get('type','')!='b2b'||get(/databases/$(d)/documents/users/$(request.auth.uid)).data.verified==true);
+  match /messages/{m}{allow read,create:if me()&&inT(get(/databases/$(d)/documents/threads/$(id)).data);}}
+ match /staff/{id}{allow read,write:if admin();}
+ match /notices/{id}{allow read:if admin()||(me()&&resource.data.uid==request.auth.uid);allow create,delete:if admin();
+  allow update:if admin()||(me()&&resource.data.uid==request.auth.uid&&request.resource.data.diff(resource.data).affectedKeys().hasOnly(['answers','status']));}
  match /finance/{id}{allow read,write:if admin();}
  match /work/{id}{allow read,write:if admin();}
 }}
