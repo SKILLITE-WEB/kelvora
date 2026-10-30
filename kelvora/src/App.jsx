@@ -1,5 +1,8 @@
+import AgentsPage from './Agents.jsx'
+import {AuditPage} from './Scout.jsx'
 import AdminPanel from './Admin.jsx'
-import {Notices,BizPage,Bell} from './Biz.jsx'
+import {Notices,Bell} from './Biz.jsx'
+import {BizPage,ProfileEditor} from './Profile.jsx'
 import Bot from './Bot.jsx'
 import {Dash,Network,verify,VerifyPanel} from './Verified.jsx'
 import {Toasts,Spin,useBusy,toast} from './Ui.jsx'
@@ -43,7 +46,7 @@ function Home({u}){return <main>
 <div className="wrap"><section className="hero"><span className="pill rv">● Now onboarding new businesses</span>
 <h1 className="rv">Software that <span className="grad">runs your business</span> while you sleep.</h1>
 <p className="rv">Kelvora Infotech builds custom web apps, software and AI agents that cut human effort and grow your business, plus a full marketing team to get you seen.</p>
-<div className="row rv"><Link className="btn" to="/register">Register your business</Link><Link className="btn s" to="/portfolio">See our work</Link></div></section></div>
+<div className="row rv"><Link className="btn" to="/register">Register your business</Link><Link className="btn s" to="/portfolio">See our work</Link><Link className="btn s" to="/agents">🤖 AI Agents</Link><Link className="btn s" to="/audit">🔍 Free AI Audit</Link></div></section></div>
 <div className="mq"><div className="mt">{[...Array(2)].map((_,k)=><span key={k} style={{display:'flex',gap:48}}>{['WEB APPS','AI AGENTS','AUTOMATION','VIDEO EDITING','MOTION GRAPHICS','SOCIAL MEDIA','BRANDING'].map(x=><span key={x}>{x} ✦</span>)}</span>)}</div></div>
 <div className="wrap"><h2><small>What we do</small>Everything your business needs to scale.</h2>
 <div className="bento">{SV.map(([i,t,d,c])=><div key={t} className={'card rv '+c}><div className="ic">{i}</div><h3>{t}</h3><p>{d}</p></div>)}</div>
@@ -107,10 +110,10 @@ function Page({children}){const{pathname}=useLocation();useEffect(()=>{scrollTo(
 export default function App(){const u=useUser();const[o,setO]=useState(false)
 return <><div className="bg"><i/><i/><i/></div><Toasts/>
 <nav><Link to="/" className="logo">Kelvora</Link><button className="s burger" onClick={()=>setO(!o)}>{o?'✕':'☰'}</button>
-<div className={'menu'+(o?' open':'')} onClick={()=>setO(false)}><Link className="l" to="/">Home</Link><Link className="l" to="/portfolio">Portfolio</Link><Link className="l" to="/store">Store</Link><Link className="l" to="/register">Register</Link>
+<div className={'menu'+(o?' open':'')} onClick={()=>setO(false)}><Link className="l" to="/">Home</Link><Link className="l" to="/portfolio">Portfolio</Link><Link className="l" to="/agents">AI Agents</Link><Link className="l" to="/store">Store</Link><Link className="l" to="/audit">Free Audit</Link><Link className="l" to="/register">Register</Link>
 {u&&<><Link className="l" to="/network">Network</Link><Bell u={u}/></>}{isAdmin(u)&&<Link className="l" to="/admin">Admin</Link>}
 {u?<button className="s" onClick={logout}>Sign out</button>:<button onClick={login}>Sign in</button>}</div></nav>
 <Page><Routes><Route path="/" element={<Home u={u}/>}/><Route path="/portfolio" element={<Portfolio/>}/><Route path="/store" element={<Store u={u}/>}/>
 <Route path="/register" element={<Register u={u}/>}/><Route path="/dashboard" element={<Need u={u}><div className="wrap"><Notices u={u}/></div><Dash u={u} Threads={Threads}/></Need>}/>
-<Route path="/admin" element={<Need u={u}><AdminPanel u={u} Threads={Threads}/></Need>}/><Route path="/network" element={<Need u={u}><Network u={u}/></Need>}/><Route path="/business/:id" element={<Need u={u}><BizPage u={u}/></Need>}/><Route path="*" element={<Navigate to="/"/>}/></Routes></Page>
+<Route path="/admin" element={<Need u={u}><AdminPanel u={u} Threads={Threads}/></Need>}/><Route path="/network" element={<Need u={u}><Network u={u}/></Need>}/><Route path="/business/:id" element={<Need u={u}><BizPage u={u}/></Need>}/><Route path="/audit" element={<Need u={u}><AuditPage u={u}/></Need>}/><Route path="/agents" element={<AgentsPage u={u}/>}/><Route path="/profile/:id" element={<Need u={u}><ProfileEditor u={u}/></Need>}/><Route path="*" element={<Navigate to="/"/>}/></Routes></Page>
 <Bot u={u}/><footer>© 2026 Kelvora Infotech · kelvorainfortech.com</footer></>}

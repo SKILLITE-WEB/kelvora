@@ -1,3 +1,6 @@
+import {Link} from 'react-router-dom'
+import {Approvals} from './Profile.jsx'
+import {ScoutBox} from './Scout.jsx'
 import {useState} from 'react'
 import {collection,addDoc,updateDoc,deleteDoc,doc,serverTimestamp} from 'firebase/firestore'
 import {db,useCol,isAdmin} from './firebase.js'
@@ -51,19 +54,20 @@ return <div className="card rv" key={r.id}><div className="row"><b>{r.name}</b><
 <p><a href={mail(r.email,'Kelvora Infotech')} style={{color:'var(--c)'}}>✉ {r.email}</a></p>
 <small>{mo.length} orders · ₹{mo.filter(x=>x.paid).reduce((a,x)=>a+(x.amount||0),0)} paid</small>
 {r.link&&<p><a href={r.link} target="_blank" rel="noreferrer" style={{color:'var(--c)'}}>Widget ↗</a></p>}
-<div className="row" style={{margin:'10px 0'}}><button className="s" onClick={()=>run(()=>verify(r))}>{r.verified?'Unverify':'✓ Verify'}</button><button onClick={()=>setT(r)}>🔔 Send notice</button></div>
+<div className="row" style={{margin:'10px 0'}}><button className="s" onClick={()=>run(()=>verify(r))}>{r.verified?'Unverify':'✓ Verify'}</button><Link className="btn s" to={'/profile/'+r.id}>✏️ Profile</Link><button onClick={()=>setT(r)}>🔔 Send notice</button></div>
 {mn.map(x=><div key={x.id} className="vp"><span className="tag">{x.kind==='questionnaire'?'📋':'🔔'} {x.status}</span> <small>{x.text}</small>{x.status==='answered'&&x.qs.map((qq,i)=><p key={i} style={{fontSize:13}}><small>{qq}</small><br/>{x.answers[i]}</p>)}</div>)}</div>})}</div></div>}
 
 function Overview(){const o=useCol('orders');const f=useCol('finance');const b=useCol('businesses');const n=useCol('notices');const th=useCol('threads')
 const lt=o.filter(late),ur=o.filter(r=>r.urgent&&r.status!=='done');const rev=o.filter(x=>x.paid).reduce((a,x)=>a+(x.amount||0),0)+f.filter(x=>x.type==='income').reduce((a,x)=>a+(x.amount||0),0)
 const exp=f.filter(x=>x.type==='expense').reduce((a,x)=>a+(x.amount||0),0)
-const al=[['🚨 Overdue orders',lt.length,'r'],['🔥 Urgent orders',ur.length,'r'],['⏳ Pending verifications',b.filter(x=>!x.verified).length,''],['📋 Unanswered questionnaires',n.filter(x=>x.kind==='questionnaire'&&x.status==='sent').length,''],['💬 Open chats',th.filter(x=>x.status==='open').length,'']]
+const al=[['🚨 Overdue orders',lt.length,'r'],['🔥 Urgent orders',ur.length,'r'],['⏳ Pending verifications',b.filter(x=>!x.verified).length,''],['📋 Unanswered questionnaires',n.filter(x=>x.kind==='questionnaire'&&x.status==='sent').length,''],['📝 Profile updates to review',b.filter(x=>x.profileStatus==='pending').length,'r'],['💬 Open chats',th.filter(x=>x.status==='open').length,'']]
 return <div style={{marginTop:16}}><div className="grid">{al.map(([k,v,c])=><div key={k} className={'card '+(c&&v?'ord late':'')}><small>{k}</small><h2 style={{margin:0}}>{v}</h2></div>)}</div>
 <div className="grid" style={{marginTop:14}}>{[['Clients',b.length],['Orders',o.length],['Completed',o.filter(x=>x.status==='done').length],['Revenue ₹',rev],['Expenses ₹',exp],['Profit ₹',rev-exp]].map(([k,v])=><div className="card" key={k}><small>{k}</small><h2 style={{margin:0}} className="grad">{v}</h2></div>)}</div></div>}
 
 export default function Admin({u,Threads}){const[t,setT]=useState('overview');const staff=useCol('staff')
 if(!isAdmin(u))return <main className="wrap"><h2>No access</h2></main>
-const tabs={overview:<Overview/>,clients:<Clients/>,orders:<Orders staff={staff}/>,inquiries:<div style={{marginTop:16}}><Threads u={u} admin/></div>,
+const tabs={overview:<Overview/>,approvals:<Approvals/>,clients:<Clients/>,orders:<Orders staff={staff}/>,inquiries:<div style={{marginTop:16}}><Threads u={u} admin/></div>,
+scout:<ScoutBox u={u} admin/>,
 employees:<Manager title="Employees" col="staff" fields={['name','email','phone','role','task']}/>,
 finance:<Manager title="Payments & expenses (type: income or expense)" col="finance" fields={['title','type','amount']} num={['amount']}/>,
 work:<Manager title="Future work & AI agents" col="work" fields={['title','link','status']}/>,

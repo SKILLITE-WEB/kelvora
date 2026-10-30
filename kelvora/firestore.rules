@@ -6,7 +6,7 @@ service cloud.firestore { match /databases/{d}/documents {
  match /users/{id}{allow read:if admin()||(me()&&request.auth.uid==id);allow write:if admin();}
  match /businesses/{id}{allow read:if resource.data.verified==true||admin()||(me()&&resource.data.uid==request.auth.uid);
   allow create:if me()&&request.resource.data.uid==request.auth.uid&&request.resource.data.verified==false;
-  allow update:if admin()||(me()&&resource.data.uid==request.auth.uid&&request.resource.data.uid==resource.data.uid&&request.resource.data.verified==resource.data.verified);
+  allow update:if admin()||(me()&&resource.data.uid==request.auth.uid&&request.resource.data.diff(resource.data).affectedKeys().hasOnly(['profileStatus','submittedAt','threadId'])&&(!request.resource.data.diff(resource.data).affectedKeys().hasAny(['profileStatus'])||request.resource.data.profileStatus=='pending'));
   allow delete:if admin();}
  match /services/{id}{allow read:if true;allow write:if admin();}
  match /orders/{id}{allow read:if admin()||(me()&&resource.data.uid==request.auth.uid);
@@ -17,6 +17,11 @@ service cloud.firestore { match /databases/{d}/documents {
  match /staff/{id}{allow read,write:if admin();}
  match /notices/{id}{allow read:if admin()||(me()&&resource.data.uid==request.auth.uid);allow create,delete:if admin();
   allow update:if admin()||(me()&&resource.data.uid==request.auth.uid&&request.resource.data.diff(resource.data).affectedKeys().hasOnly(['answers','status']));}
+ match /scouts/{id}{allow read:if admin()||(me()&&resource.data.uid==request.auth.uid);allow write:if false;}
+ match /drafts/{id}{allow read:if admin()||(me()&&resource.data.uid==request.auth.uid);
+  allow create:if me()&&request.resource.data.uid==request.auth.uid&&get(/databases/$(d)/documents/businesses/$(id)).data.uid==request.auth.uid;
+  allow update:if admin()||(me()&&resource.data.uid==request.auth.uid&&request.resource.data.uid==resource.data.uid);allow delete:if admin();}
+ match /images/{id}{allow read:if true;allow create:if me()&&request.resource.data.uid==request.auth.uid&&request.resource.data.data.size()<450000;allow delete:if admin()||(me()&&resource.data.uid==request.auth.uid);}
  match /finance/{id}{allow read,write:if admin();}
  match /work/{id}{allow read,write:if admin();}
 }}

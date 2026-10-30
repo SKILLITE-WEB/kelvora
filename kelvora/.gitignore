@@ -1,3 +1,5 @@
 node_modules
 dist
 .firebase
+worker/node_modules
+worker/.wrangler

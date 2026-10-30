@@ -1,3 +1,4 @@
+import {ProfileCard,Logo} from './Profile.jsx'
 import {useState,useEffect} from 'react'
 import {useNavigate,Link} from 'react-router-dom'
 import {collection,addDoc,updateDoc,setDoc,doc,onSnapshot,serverTimestamp} from 'firebase/firestore'
@@ -23,7 +24,7 @@ return <div className="vp"><div className="row"><b>{b.name}</b><span className="
 {admin&&b.link&&<p style={{marginTop:8}}><a href={b.link} target="_blank" rel="noreferrer" style={{color:'var(--c)'}}>Widget: {b.link}</a></p>}
 {!admin&&!b.verified&&<small style={{color:'#b9b6d6'}}>Our team will review and reply here. You can chat below.</small>}
 {!admin&&b.verified&&<div className="unlock"><Link className="btn" to="/network">🌐 Open Business Network</Link>
-<form onSubmit={e=>{e.preventDefault();run(async()=>{await updateDoc(doc(db,'businesses',b.id),{link:l});toast('Widget link saved')})}} style={{display:'flex',gap:8,maxWidth:'none',marginTop:12}}>
+<form onSubmit={e=>{e.preventDefault();run(async()=>{await setDoc(doc(db,'drafts',b.id),{uid:b.uid,data:{link:l},t:serverTimestamp()},{merge:true});await updateDoc(doc(db,'businesses',b.id),{profileStatus:'pending',submittedAt:serverTimestamp()});toast('Sent for approval')})}} style={{display:'flex',gap:8,maxWidth:'none',marginTop:12}}>
 <input style={{flex:1}} placeholder="Add your widget / website link" value={l} onChange={e=>setL(e.target.value)}/><button disabled={busy}>Save</button></form></div>}</div>}
 
 function BizEdit({x}){const[f,setF]=useState({name:x.name,category:x.category,desc:x.desc||'',link:x.link||''});const[busy,run]=useBusy()
@@ -38,13 +39,13 @@ return <main className="wrap"><h2><small>Dashboard</small>Welcome back</h2>
 {ver&&<div className="card glow" style={{marginBottom:14}}>🎉 You are verified. <Link to="/network" style={{color:'var(--c)'}}>Open Business Network →</Link></div>}
 <h3 style={{marginBottom:12}}>Chats</h3><Threads u={u}/>
 <h3 style={{margin:'32px 0 12px'}}>Orders</h3><div className="grid">{o.length===0&&<p style={{color:'#8a87aa'}}>No orders yet.</p>}{o.map(x=><div className="card" key={x.id}><b>{x.title}</b><p>₹{x.amount}{x.due&&<small> · Due {x.due}</small>}</p><span className="tag">{x.status}</span> <span className="tag">{x.paid?'Paid':'Unpaid'}</span><Prog s={x.status}/></div>)}</div>
-{b.length>0&&<><h3 style={{margin:'32px 0 12px'}}>My business profile</h3><div className="grid">{b.map(x=><BizEdit key={x.id} x={x}/>)}</div></>}</main>}
+{b.length>0&&<><h3 style={{margin:'32px 0 12px'}}>My business profile</h3><div className="grid">{b.map(x=><ProfileCard key={x.id} x={x}/>)}</div></>}</main>}
 
 export function Network({u}){const ver=useVerified(u);const list=useCol('businesses',['verified','==',true]);const nav=useNavigate();const[busy,run]=useBusy()
 if(!ver)return <main className="wrap"><h2><small>Network</small>Verified businesses only</h2><div className="card">The Business Network unlocks after your business is verified. <Link to="/register" style={{color:'var(--c)'}}>Register →</Link></div></main>
 const go=x=>run(async()=>{await addDoc(collection(db,'threads'),{uid:u.uid,members:[u.uid,x.uid],email:u.email,subject:'Chat: '+x.name,last:'',status:'open',type:'b2b',t:serverTimestamp()});toast('Chat started');nav('/dashboard')})
 return <main className="wrap"><h2><small>Network</small>Grow together</h2><p style={{color:'#b9b6d6',marginBottom:16}}>Chat with other verified businesses, discover widgets and find partners.</p>
-<div className="grid">{list.filter(x=>x.uid!==u.uid).map(x=><div className="card rv" key={x.id}><span className="tag">✓ Verified</span><h3>{x.name}</h3><small>{x.category}</small><p>{x.desc}</p>
+<div className="grid">{list.filter(x=>x.uid!==u.uid).map(x=><div className="card rv" key={x.id}><Logo b={x} s={48}/><span className="tag">✓ Verified</span><h3>{x.name}</h3><small>{x.category}</small><p>{x.desc}</p>
 <div className="row"><Link className="btn s" to={'/business/'+x.id}>View profile</Link>{x.link&&<a className="btn s" href={x.link} target="_blank" rel="noreferrer">Open widget ↗</a>}<button disabled={busy} onClick={()=>go(x)}>Message</button></div></div>)}</div></main>}
 
 function Prog({s}){const i=Math.max(0,['new','working','done'].indexOf(s))
