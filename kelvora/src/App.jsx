@@ -1,3 +1,5 @@
+import {lazy as _lz,Suspense as _Su} from 'react'
+const _IH=_lz(()=>import('./Icons3D.jsx'))
 import {HomeRoot,PITCH,World,PageStage} from './Home3D.jsx'
 import Intro from './Intro.jsx'
 import {Chat,requestService} from './Support.jsx'
@@ -104,8 +106,8 @@ finance:<Manager title="Payments & expenses (type: income or expense)" col="fina
 work:<Manager title="Future work & AI agent links" col="work" fields={[{k:'title'},{k:'link'},{k:'status'}]}/>}
 return <main className="wrap"><h2><small>Admin</small>Control panel</h2><div className="tabs">{Object.keys(tabs).map(k=><button key={k} className={t===k?'':'s'} onClick={()=>setT(k)}>{k}</button>)}</div>{tabs[t]}</main>}
 
-const SK={"/network":"network","/audit":"audit","/agents":"build","/store":"growth","/portfolio":"computer","/register":"chat"}
-function Page({children}){const{pathname}=useLocation();useEffect(()=>{scrollTo({top:0})},[pathname]);return <div key={pathname} className="pg">{SK[pathname]&&<PageStage kind={SK[pathname]}/>}{children}</div>}
+const SK={"/network":"network","/audit":"audit","/store":"growth","/portfolio":"computer","/register":"chat"}
+function Page({children}){const{pathname}=useLocation();useEffect(()=>{scrollTo({top:0})},[pathname]);return <div key={pathname} className="pg">{['/dashboard','/admin'].includes(pathname)&&<_Su fallback={null}><_IH/></_Su>}{SK[pathname]&&<PageStage kind={SK[pathname]}/>}{children}</div>}
 export default function App(){const u=useUser();const[o,setO]=useState(false);const[w3,setW3]=useState(()=>{try{return localStorage.getItem('kv_3d')!=='off'}catch{return true}})
 return <><div className="bg"><i/><i/><i/></div><World on={w3}/><Toasts/><Intro/>
 <nav><Link to="/" className="logo">Kelvora</Link><button className="s burger" onClick={()=>setO(!o)}>{o?'✕':'☰'}</button>

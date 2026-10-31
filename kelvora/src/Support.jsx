@@ -17,6 +17,7 @@ const Prog=({s})=>{const i=Math.max(0,['new','working','done'].indexOf(s));retur
 const csvOf=o=>{const k=['title','type','amount','due','status','paid'];const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';return k.join(',')+'\n'+o.map(r=>k.map(x=>q(r[x])).join(',')).join('\n')}
 const dl=(n,c)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([c],{type:'text/csv'}));a.download=n;a.click()}
 
+const OI={requested:['a',3],quoted:['s',7],new:['s',2],working:['a',5],done:['a',6],declined:['m',3]}
 function OrderCard({oid,u,tid}){const[o,setO]=useState(undefined);const[f,setF]=useState({});const[busy,run]=useBusy();const adm=isAdmin(u)
 useEffect(()=>onSnapshot(doc(db,'orders',oid),d=>setO(d.exists()?{id:d.id,...d.data()}:null),()=>setO(null)),[oid])
 if(o===undefined)return <Spin/>
@@ -28,6 +29,7 @@ await addDoc(collection(db,'threads',tid,'messages'),{text:'💰 Quote for "'+o.
 await addDoc(collection(db,'notices'),{uid:o.uid,biz:o.title,email:o.email,kind:'reminder',text:'💰 You have a new quote in your Kelvora chat: '+o.title,qs:[],answers:[],status:'sent',t:serverTimestamp()});toast('Quote sent')})
 const open=['requested','quoted'].includes(o.status),act=['new','working','done'].includes(o.status)
 return <div className={'ocard '+(o.status==='quoted'?'q':'')}>
+{(()=>{const[t,i]=OI[o.status]||['s',0];return <div className="ic3" data-t={t} data-i={i} data-k={'o-'+o.status}/>})()}
 <div className="row"><b>{o.title}</b><span className="tag">{STAT[o.status]||o.status}</span>{o.urgent&&<span className="tag r">URGENT</span>}{o.paid&&<span className="tag">Paid ✓</span>}</div>
 <small>{o.type} · {o.email}</small>
 {adm&&open?<div style={{display:'grid',gap:8}}><div className="row"><input style={{flex:1,minWidth:110}} placeholder="Amount ₹" value={val('amount')} onChange={e=>setF({...f,amount:e.target.value})}/><input type="date" style={{flex:1,minWidth:140}} value={val('due')} onChange={e=>setF({...f,due:e.target.value})}/></div>

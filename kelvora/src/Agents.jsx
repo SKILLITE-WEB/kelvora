@@ -1,4 +1,7 @@
+import {lazy,Suspense} from 'react'
 import {requestService} from './Support.jsx'
+const IconHost=lazy(()=>import('./Icons3D.jsx'))
+const Stage=lazy(()=>import('./Stage3D.jsx'))
 import {collection,addDoc,serverTimestamp} from 'firebase/firestore'
 import {db,login} from './firebase.js'
 import {toast,useBusy} from './Ui.jsx'
@@ -8,6 +11,6 @@ const G=[
 ['🎬 Marketing','Done by our creative team',[['📣','Social Media Management','Strategy, posting and growth.'],['🎞','Video Editing and Reels','Scroll-stopping reels, ads and brand films.'],['✨','Motion Graphics','Animated logos, explainers and visuals.'],['🎨','Branding and Logo','A look that people remember.'],['🎯','Ads (Meta and Google)','Campaigns that bring real leads.'],['🔍','SEO and Google Business','Get found when people search.'],['📲','WhatsApp and Email Campaigns','Reach your customers directly.']]]]
 export default function AgentsPage({u}){const[busy,run]=useBusy()
 const ask=(t,g)=>{if(!u)return login();run(()=>requestService(u,t,g,0))}
-return <main className="wrap"><h2><small>What we build</small>Software, AI agents and marketing</h2>
+return <main className="wrap"><Suspense fallback={null}><IconHost/></Suspense><h2><small>What we build</small>Software, AI agents and marketing</h2>
 <p style={{color:'#b9b6d6',maxWidth:'62ch'}}>Pick what you need and tap Request. Our team replies with a quote, and you can track it in your Dashboard.</p>
-{G.map(([t,s,items])=><section key={t}><h2 style={{fontSize:30}}><small>{s}</small>{t}</h2><div className="grid">{items.map(([i,n,d])=><div className="card rv" key={n}><div className="ic">{i}</div><h3>{n}</h3><p>{d}</p><br/><button disabled={busy} onClick={()=>ask(n,t)}>Request quote</button></div>)}</div></section>)}</main>}
+{G.map(([t,s,items],gi)=><section key={t}><h2 style={{fontSize:30}}><small>{s}</small>{t}</h2><div className="grid">{items.map(([i,n,d],ii)=><div className="card rv" key={n}><div className="ic3" data-t={'sam'[gi]} data-i={gi*10+ii} data-k={gi+'-'+ii}><span className="ice">{i}</span></div><h3>{n}</h3><p>{d}</p><br/><button disabled={busy} onClick={()=>ask(n,t)}>Request quote</button></div>)}</div></section>)}</main>}

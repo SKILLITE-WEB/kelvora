@@ -178,3 +178,27 @@ button,.btn,input,select,textarea{min-height:44px}.chips button,.bb button{min-h
 .fstage canvas{filter:drop-shadow(0 28px 34px rgba(124,92,255,.28))}
 .banstage{height:290px;margin:0 0 -70px;position:relative;z-index:3;pointer-events:none}
 @media(max-width:800px){.fstage,.frow.flip .fstage{height:320px;margin:-10px 0}.banstage{height:210px;margin-bottom:-30px}}
+/*icons3d*/
+.ic3{position:relative;width:84px;height:84px;margin-bottom:6px}
+.ic3 .ice{position:absolute;inset:0;display:grid;place-items:center;font-size:34px;transition:opacity .3s}
+.k3d .ic3 .ice{opacity:0}
+.k3d .grid .card{margin-top:22px}
+.i3c{position:fixed;inset:0;pointer-events:none;z-index:5;overflow:hidden}
+.i3c canvas{display:block}
+/*icons3d-v2*/
+.k3d .ic3 .ice{opacity:1}
+.k3d .ic3.on .ice{opacity:0}
+/*icons3d-v3*/
+.ic3 canvas.i3x{position:absolute;left:-36px;top:-36px;width:156px;height:156px;pointer-events:none;z-index:2}
+/*dash-v1*/
+.ocard{position:relative;margin-top:30px;padding:18px;border-radius:20px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(145deg,rgba(124,92,255,.16),rgba(34,211,238,.06));backdrop-filter:blur(10px);box-shadow:0 18px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.14);transition:transform .25s,box-shadow .25s}
+.ocard:hover{transform:translateY(-3px);box-shadow:0 24px 50px rgba(124,92,255,.25),inset 0 1px 0 rgba(255,255,255,.18)}
+.ocard.q{box-shadow:0 0 0 1px rgba(255,176,32,.45),0 18px 40px rgba(0,0,0,.35)}
+.ocard .ic3{position:absolute;right:12px;top:-40px;width:84px;height:84px;margin:0;pointer-events:none}
+.ocard>.ic3+.row{padding-right:78px}
+.pbar{display:flex;gap:8px;margin-top:10px}.pbar>div{flex:1;text-align:center}
+.pbar>div i{display:block;height:7px;border-radius:9px;background:rgba(255,255,255,.1);margin-bottom:6px}
+.pbar>div.on i{background:linear-gradient(90deg,#b6ff5c,#22d3ee);box-shadow:0 0 14px rgba(182,255,92,.55)}
+.msgs .m{border-radius:18px;padding:10px 14px}
+.msgs .m.me{background:linear-gradient(135deg,#7c5cff,#22d3ee);color:#fff}
+.msgs .m.sys{background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.18);text-align:center}
