@@ -10,9 +10,10 @@ service cloud.firestore { match /databases/{d}/documents {
   allow delete:if admin();}
  match /services/{id}{allow read:if true;allow write:if admin();}
  match /orders/{id}{allow read:if admin()||(me()&&resource.data.uid==request.auth.uid);
-  allow create:if me()&&(admin()||request.resource.data.uid==request.auth.uid);allow update,delete:if admin();}
- match /threads/{id}{allow read,update:if me()&&inT(resource.data);
-  allow create:if me()&&request.resource.data.uid==request.auth.uid&&(request.resource.data.get('type','')!='b2b'||get(/databases/$(d)/documents/users/$(request.auth.uid)).data.verified==true);
+  allow create:if me()&&(admin()||(request.resource.data.uid==request.auth.uid&&request.resource.data.status=='requested'&&request.resource.data.paid==false));
+  allow update:if admin()||(me()&&resource.data.uid==request.auth.uid&&resource.data.status=='quoted'&&request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','approvedAt'])&&request.resource.data.status in ['new','declined']);allow delete:if admin();}
+ match /threads/{id}{allow read:if me()&&(resource==null||inT(resource.data));allow update:if me()&&inT(resource.data);
+  allow create:if me()&&request.resource.data.uid==request.auth.uid&&(!id.matches('support_.*')||(id=='support_'+request.auth.uid&&request.resource.data.type=='support'))&&(request.resource.data.get('type','')!='b2b'||get(/databases/$(d)/documents/users/$(request.auth.uid)).data.verified==true);
   match /messages/{m}{allow read,create:if me()&&inT(get(/databases/$(d)/documents/threads/$(id)).data);}}
  match /staff/{id}{allow read,write:if admin();}
  match /notices/{id}{allow read:if admin()||(me()&&resource.data.uid==request.auth.uid);allow create,delete:if admin();

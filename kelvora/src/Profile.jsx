@@ -1,12 +1,14 @@
 import {useState,useEffect,useRef} from 'react'
 import {Link,useParams,useNavigate,useLocation} from 'react-router-dom'
 import {collection,addDoc,updateDoc,setDoc,deleteDoc,getDoc,doc,onSnapshot,serverTimestamp} from 'firebase/firestore'
-import {db,auth,isAdmin,useCol} from './firebase.js'
+import {db,auth,isAdmin,useCol,login} from './firebase.js'
 import {toast,useBusy,Spin} from './Ui.jsx'
 
 const IC={instagram:['📷','Instagram'],linkedin:['in','LinkedIn'],google:['📍','Google'],youtube:['▶','YouTube'],facebook:['f','Facebook']}
 const BASIC=['name','category','desc','link']
-const safe=s=>{s=String(s||'').trim();return /^https?:\/\//i.test(s)?s:/^[a-z][a-z0-9+.-]*:/i.test(s)?'#':'https://'+s}
+export const cleanUrl=s=>{s=String(s||'').trim();if(!s||/\s/.test(s))return '';if(!/^https?:\/\//i.test(s)){if(/^[a-z][a-z0-9+.-]*:/i.test(s))return '';s='https://'+s}
+try{const u=new URL(s);return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(u.hostname)?u.href:''}catch{return ''}}
+const safe=s=>cleanUrl(s)||'#'
 const cache=new Map()
 export function Img({id,alt='',className='',style}){const[s,setS]=useState(cache.get(id)||'')
 useEffect(()=>{if(!id)return setS('');if(/^(data:|https?:)/.test(id))return setS(id);if(cache.has(id))return setS(cache.get(id))
@@ -34,8 +36,9 @@ const m=merge({name:biz.name||'',category:biz.category||'',desc:biz.desc||'',lin
 if(b===undefined)return <div className="wrap"><Spin/></div>
 if(!b||(!adm&&b.uid!==u.uid))return <main className="wrap"><h2>Not found or no access</h2><Link className="btn s" to="/dashboard">← Dashboard</Link></main>
 const P=(k,v)=>setF(x=>({...x,profile:{...x.profile,[k]:v}}));const T=(k,v)=>setF(x=>({...x,[k]:v}));const p=f.profile
-const draft=submit=>run(async()=>{await setDoc(doc(db,'drafts',id),{uid:b.uid,data:f,t:serverTimestamp()});if(submit){await updateDoc(doc(db,'businesses',id),{profileStatus:'pending',submittedAt:serverTimestamp()});toast('Sent to Kelvora for approval');nav('/dashboard')}else toast('Draft saved')})
-const publish=()=>run(async()=>{await updateDoc(doc(db,'businesses',id),{name:f.name,category:f.category,desc:f.desc,link:f.link,profile:f.profile,profileStatus:'approved',adminNote:''});await deleteDoc(doc(db,'drafts',id)).catch(()=>{})
+const bad=()=>{const k=[];if(f.link&&!cleanUrl(f.link))k.push('Widget link');Object.keys(IC).forEach(x=>{if(p[x]&&!cleanUrl(p[x]))k.push(IC[x][1])});return k}
+const draft=submit=>run(async()=>{const e=bad();if(e.length)throw new Error('Invalid link: '+e.join(', ')+'. Use a real address like example.com');await setDoc(doc(db,'drafts',id),{uid:b.uid,data:f,t:serverTimestamp()});if(submit){await updateDoc(doc(db,'businesses',id),{profileStatus:'pending',submittedAt:serverTimestamp()});toast('Sent to Kelvora for approval');nav('/dashboard')}else toast('Draft saved')})
+const publish=()=>run(async()=>{const e=bad();if(e.length)throw new Error('Invalid link: '+e.join(', ')+'. Use a real address like example.com');await updateDoc(doc(db,'businesses',id),{name:f.name,category:f.category,desc:f.desc,link:f.link,profile:f.profile,profileStatus:'approved',adminNote:''});await deleteDoc(doc(db,'drafts',id)).catch(()=>{})
 await addDoc(collection(db,'notices'),{uid:b.uid,biz:f.name,email:b.email||'',kind:'reminder',text:'✏️ Kelvora updated your business profile.',qs:[],answers:[],status:'sent',t:serverTimestamp()});toast('Published');nav('/business/'+id)})
 return <main className="wrap"><Link to={adm?'/admin':'/dashboard'} style={{color:'var(--c)'}}>← Back</Link><h2><small>{adm?'Admin edit':'Your profile'}</small>Business profile</h2>
 {b.profileStatus==='pending'&&<div className="card glow" style={{marginBottom:12}}>⏳ Your changes are waiting for Kelvora approval. Your public page updates once approved.</div>}
@@ -72,33 +75,44 @@ return()=>{removeEventListener('keydown',k);document.removeEventListener('fullsc
 return <div className="deck" ref={el} style={{'--ac':p.accent||'#7c5cff'}}><div className="slide" key={i} onClick={()=>setI(x=>Math.min(x+1,S.length-1))}>{S[i]}</div>
 <div className="dn"><button className="s" onClick={()=>setI(x=>Math.max(x-1,0))}>←</button><span className="dots">{S.map((_,k)=><i key={k} className={k===i?'on':''}/>)}</span><button className="s" onClick={()=>setI(x=>Math.min(x+1,S.length-1))}>→</button><button onClick={onClose}>✕ Close</button></div></div>}
 
-export function BizPage({u}){const{id}=useParams();const loc=useLocation();const nav=useNavigate();const[b0,setB]=useState(undefined);const[dr,setDr]=useState(null);const ver=useVer(u);const[busy,run]=useBusy();const[deck,setDeck]=useState(false);const pv=useRef()
+export function BizPage({u}){const{id}=useParams();const loc=useLocation();const nav=useNavigate();const[b0,setB]=useState(undefined);const[dr,setDr]=useState(null);const ver=useVer(u);const[busy,run]=useBusy();const[deck,setDeck]=useState(false);const[live,setLive]=useState(false);const pv=useRef()
 const wd=new URLSearchParams(loc.search).get('draft')==='1'
 useEffect(()=>onSnapshot(doc(db,'businesses',id),d=>setB(d.exists()?{id:d.id,...d.data()}:null),()=>setB(null)),[id])
-useEffect(()=>{if(!wd)return setDr(null);return onSnapshot(doc(db,'drafts',id),d=>setDr(d.exists()?d.data().data:null),()=>setDr(null))},[id,wd])
+useEffect(()=>{if(!wd){setDr(null);return}return onSnapshot(doc(db,'drafts',id),d=>setDr(d.exists()?d.data().data:null),()=>setDr(null))},[id,wd])
 if(b0===undefined)return <div className="wrap"><Spin/></div>
 if(!b0)return <main className="wrap"><h2>Business not found</h2><Link className="btn s" to="/network">← Network</Link></main>
-const b=merge(b0,dr),p=b.profile,mine=b0.uid===u.uid,adm=isAdmin(u),gal=(p.gallery||[]).filter(Boolean)
+const b=merge(b0,dr),p=b.profile,mine=!!u&&b0.uid===u.uid,adm=isAdmin(u),gal=(p.gallery||[]).filter(Boolean),wl=cleanUrl(b.link)
 const chat=msg=>run(async()=>{const r=await addDoc(collection(db,'threads'),{uid:u.uid,members:[u.uid,b0.uid],email:u.email,subject:(msg?'Collaboration: ':'Chat: ')+b0.name,last:msg||'',status:'open',type:'b2b',t:serverTimestamp()})
 if(msg)await addDoc(collection(db,'threads',r.id,'messages'),{text:msg,from:u.email,t:serverTimestamp()});toast('Chat started');nav('/dashboard')})
 return <main className="wrap" style={{'--ac':p.accent||'#7c5cff'}}>
 {wd&&<div className="card ord urg" style={{marginBottom:12}}>👁 Draft preview. Visitors still see the approved version.</div>}
 <section className="pfh">{p.cover&&<Img id={p.cover} className="cov"/>}<div className="pfi"><div className="row" style={{gap:16}}><Logo b={b} s={84}/><div><h1>{b.name}</h1>{p.tagline&&<p style={{color:'#d8d5f2'}}>{p.tagline}</p>}</div></div>
 <div className="row"><span className="tag">{b0.verified?'✓ Verified':'⏳ Pending'}</span><span className="tag v">{b.category}</span>{p.location&&<span className="tag">📍 {p.location}</span>}</div>
-<div className="row">{Object.keys(IC).filter(k=>p[k]).map(k=><a key={k} className="soc" title={IC[k][1]} href={safe(p[k])} target="_blank" rel="noreferrer">{IC[k][0]}</a>)}</div>
-<div className="row">{b.link&&<a className="btn" href={safe(b.link)} target="_blank" rel="noreferrer">Open widget ↗</a>}<button className="s" onClick={()=>setDeck(true)}>▶ Present</button>
-{!mine&&ver&&<><button disabled={busy} onClick={()=>chat()}>💬 Message</button><button className="s" disabled={busy} onClick={()=>chat('Hi! I would like to explore a collaboration with '+b0.name+'.')}>🤝 Propose collaboration</button></>}
+<div className="row">{Object.keys(IC).filter(k=>cleanUrl(p[k])).map(k=><a key={k} className="soc" title={IC[k][1]} href={cleanUrl(p[k])} target="_blank" rel="noreferrer">{IC[k][0]}</a>)}</div>
+<div className="row">{wl&&<a className="btn" href={wl} target="_blank" rel="noreferrer">Open widget ↗</a>}<button className="s" onClick={()=>setDeck(true)}>▶ Present</button>
+{!mine&&(ver?<><button disabled={busy} onClick={()=>chat()}>💬 Message</button><button className="s" disabled={busy} onClick={()=>chat('Hi! I would like to explore a collaboration with '+b0.name+'.')}>🤝 Propose collaboration</button></>:u?<Link className="btn s" to="/register">🔒 Register to chat</Link>:<button className="s" onClick={login}>🔒 Sign in to connect</button>)}
 {(mine||adm)&&<Link className="btn s" to={'/profile/'+b0.id}>✏️ Edit</Link>}</div></div></section>
 <div className="bento" style={{marginTop:14}}>
 <div className="card s4"><h3>About</h3><p>{p.about||b.desc||'No description yet.'}</p></div>
-<div className="card s2"><h3>Details</h3>{p.founded&&<p>🗓 Founded {p.founded}</p>}{p.team&&<p>👥 Team: {p.team}</p>}{p.email&&<p><a href={'mailto:'+p.email} style={{color:'var(--c)'}}>✉ {p.email}</a></p>}{p.phone&&<p>📞 {p.phone}</p>}{!mine&&!ver&&<small>Get verified to message businesses.</small>}</div>
+<div className="card s2"><h3>Details</h3>{p.founded&&<p>🗓 Founded {p.founded}</p>}{p.team&&<p>👥 Team: {p.team}</p>}{p.email&&<p><a href={'mailto:'+p.email} style={{color:'var(--c)'}}>✉ {p.email}</a></p>}{p.phone&&<p>📞 {p.phone}</p>}{!mine&&!ver&&<small>Browsing is open to everyone. Chat and collaboration are for verified businesses.</small>}</div>
 {(p.services||[]).length>0&&<div className="card s6"><h3>What we do</h3><div className="grid" style={{marginTop:10}}>{p.services.map((s,i)=><div className="card" key={i}><h3>{s.title}</h3><p>{s.text}</p></div>)}</div></div>}
 {(p.highlights||[]).length>0&&<div className="card s6"><div className="grid">{p.highlights.map((h,i)=><div key={i}><div className="hl">{h.value}</div><small>{h.label}</small></div>)}</div></div>}
 {(p.offering||p.lookingFor)&&<div className="card glow s6"><h3>🤝 Collaboration</h3><div className="grid" style={{marginTop:8}}>{p.offering&&<div><b>We can offer</b><p>{p.offering}</p></div>}{p.lookingFor&&<div><b>We are looking for</b><p>{p.lookingFor}</p></div>}</div></div>}
 {gal.length>0&&<div className="card s6"><h3>Gallery</h3><div className="gal" style={{marginTop:10}}>{gal.map((g,i)=><Img key={i} id={g}/>)}</div></div>}
-{b.link&&<div className="card s6"><div className="row"><h3 style={{marginRight:'auto'}}>Live widget</h3><button className="s" onClick={()=>pv.current?.requestFullscreen?.()}>⛶ Full screen</button></div>
-<iframe ref={pv} title="widget" src={safe(b.link)} loading="lazy" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" style={{width:'100%',height:420,border:0,borderRadius:14,background:'#fff',marginTop:10}}/><small>Blank? The site may block previews. Use Open widget.</small></div>}</div>
+{wl&&<div className="card s6"><div className="row"><h3 style={{marginRight:'auto'}}>Live widget</h3><a className="btn s" href={wl} target="_blank" rel="noreferrer">Open ↗</a>{live&&<button className="s" onClick={()=>pv.current?.requestFullscreen?pv.current.requestFullscreen():window.open(wl,'_blank')}>⛶ Full screen</button>}</div>
+{!live?<button className="s" style={{marginTop:10}} onClick={()=>setLive(true)}>▶ Load live preview</button>:<><iframe ref={pv} title="widget" src={wl} loading="lazy" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" style={{width:'100%',height:420,border:0,borderRadius:14,background:'#fff',marginTop:10}}/><small>Blank or refused to connect? That website blocks previews. Use Open ↗.</small></>}</div>}</div>
 {deck&&<Deck b={b} p={p} onClose={()=>setDeck(false)}/>}</main>}
+
+export function NetworkPage({u}){const list=useCol('businesses',['verified','==',true]);const ver=useVer(u);const[q,setQ]=useState('')
+const L=list.filter(x=>JSON.stringify([x.name,x.category,x.desc,x.profile?.tagline]).toLowerCase().includes(q.toLowerCase()))
+return <main className="wrap"><h2><small>Network</small>Verified businesses</h2>
+<p style={{color:'#b9b6d6',marginBottom:12}}>Anyone can browse and view profiles. Verified businesses can also chat and collaborate.</p>
+{!u?<div className="card" style={{marginBottom:14}}><div className="row">Browsing as a guest. <button onClick={login}>Sign in</button></div></div>
+:!ver?<div className="card" style={{marginBottom:14}}>You can browse everything. Want to chat and collaborate? <Link to="/register" style={{color:'var(--c)'}}>Register your business</Link> (optional).</div>
+:<div className="card glow" style={{marginBottom:14}}>✓ You are verified. Open a profile to message or propose a collaboration.</div>}
+<input placeholder="Search businesses…" value={q} onChange={e=>setQ(e.target.value)} style={{marginBottom:14}}/>
+<div className="grid">{L.length===0&&<p style={{color:'#8a87aa'}}>No businesses found.</p>}{L.map(x=><Link className="card rv bc" key={x.id} to={'/business/'+x.id}><div className="row"><Logo b={x} s={52}/><div><b>{x.name}</b><br/><small>{x.category}</small></div></div><p>{x.profile?.tagline||x.desc}</p><span className="tag">✓ Verified</span></Link>)}</div></main>}
+
 
 const LBL={name:'Name',category:'Category',desc:'Description',link:'Widget link'}
 const same=(a,b)=>JSON.stringify(a??'')===JSON.stringify(b??'')

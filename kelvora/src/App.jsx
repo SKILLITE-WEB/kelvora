@@ -1,8 +1,12 @@
+import {HomeRoot,PITCH,World,PageStage} from './Home3D.jsx'
+import Intro from './Intro.jsx'
+import {Chat,requestService} from './Support.jsx'
 import AgentsPage from './Agents.jsx'
 import {AuditPage} from './Scout.jsx'
 import AdminPanel from './Admin.jsx'
 import {Notices,Bell} from './Biz.jsx'
-import {BizPage,ProfileEditor} from './Profile.jsx'
+import {BizPage,ProfileEditor,NetworkPage,cleanUrl} from './Profile.jsx'
+import Tabs from './Mobile.jsx'
 import Bot from './Bot.jsx'
 import {Dash,Network,verify,VerifyPanel} from './Verified.jsx'
 import {Toasts,Spin,useBusy,toast} from './Ui.jsx'
@@ -15,21 +19,14 @@ import VIDEOS from './videos.js'
 
 const Need=({u,children})=>u===undefined?<div className="wrap"><Spin/></div>:u?children:<div className="card"><p>Please sign in to continue.</p><br/><button onClick={login}>Sign in with Google</button></div>
 
-function Chat({tid,u}){const[ms,setMs]=useState([]);const[t,setT]=useState('');const[busy,run]=useBusy();const end=useRef()
-useEffect(()=>onSnapshot(query(collection(db,'threads',tid,'messages'),orderBy('t')),x=>setMs(x.docs.map(d=>d.data()))),[tid])
-useEffect(()=>{end.current?.scrollIntoView({behavior:'smooth',block:'nearest'})},[ms.length])
-const send=e=>{e.preventDefault();const v=t.trim();if(!v)return;setT('');run(async()=>{await addDoc(collection(db,'threads',tid,'messages'),{text:v,from:u.email,t:serverTimestamp()});await updateDoc(doc(db,'threads',tid),{last:v})})}
-return <div><div className="msgs">{ms.length===0&&<small style={{color:'#8a87aa'}}>No messages yet.</small>}{ms.map((m,i)=>m.sys?<div key={i} className="m sys">{m.text}</div>:<div key={i} className={'m '+(m.from===u.email?'me':'')}><small>{m.from}</small><br/>{m.text}</div>)}<div ref={end}/></div>
-<form onSubmit={send} style={{display:'flex',gap:8,maxWidth:'none'}}><input value={t} onChange={e=>setT(e.target.value)} placeholder="Type a message…" style={{flex:1}}/><button disabled={busy}>Send</button></form></div>}
-
 function Threads({u,admin}){const th=useCol('threads',admin?null:['members','array-contains',u.uid]);const[o,setO]=useState(null)
-const L=[...th].sort((a,b)=>(b.t?.seconds||0)-(a.t?.seconds||0))
+const L=[...th].sort((a,b)=>((b.type==='support')-(a.type==='support'))||((b.t?.seconds||0)-(a.t?.seconds||0)));useEffect(()=>{const s=th.find(x=>x.type==='support');if(s&&o===null&&!admin)setO(s.id)},[th.length])
 return <div className="grid">{L.length===0&&<p style={{color:'#8a87aa'}}>No chats yet.</p>}{L.map(x=><div className="card rv" key={x.id} style={{gridColumn:o===x.id?'1/-1':undefined}}>
-<div className="row"><b>{x.subject}</b><span className={'tag '+(x.type==='verify'?'v':'')}>{x.type==='verify'?'verification':x.type==='b2b'?'network':x.status}</span></div><small>{x.email}</small><p>{x.last}</p>
+<div className="row"><b>{x.subject}</b><span className={'tag '+(x.type==='verify'?'v':'')}>{x.type==='verify'?'verification':x.type==='b2b'?'network':x.type==='support'?'Kelvora':x.status}</span></div><small>{x.email}</small><p>{x.last}</p>
 {x.type==='verify'&&<VerifyPanel x={x} admin={admin}/>}
 <div className="row" style={{marginTop:10}}><button className="s" onClick={()=>setO(o===x.id?null:x.id)}>{o===x.id?'Close chat':'Open chat'}</button>
 {admin&&x.type!=='verify'&&<button className="s" onClick={()=>updateDoc(doc(db,'threads',x.id),{status:x.status==='open'?'closed':'open'})}>Toggle status</button>}</div>
-{o===x.id&&<Chat tid={x.id} u={u}/>}</div>)}</div>}
+{o===x.id&&<Chat tid={x.id} u={u} th={x}/>}</div>)}</div>}
 
 function Contact({u}){const[s,setS]=useState('');const[m,setM]=useState('');const[ok,setOk]=useState(false)
 const go=async e=>{e.preventDefault()
@@ -46,7 +43,7 @@ function Home({u}){return <main>
 <div className="wrap"><section className="hero"><span className="pill rv">● Now onboarding new businesses</span>
 <h1 className="rv">Software that <span className="grad">runs your business</span> while you sleep.</h1>
 <p className="rv">Kelvora Infotech builds custom web apps, software and AI agents that cut human effort and grow your business, plus a full marketing team to get you seen.</p>
-<div className="row rv"><Link className="btn" to="/register">Register your business</Link><Link className="btn s" to="/portfolio">See our work</Link><Link className="btn s" to="/agents">🤖 AI Agents</Link><Link className="btn s" to="/audit">🔍 Free AI Audit</Link></div></section></div>
+<div className="row rv"><Link className="btn" to="/register">Register your business</Link><Link className="btn s" to="/portfolio">See our work</Link><Link className="btn s" to="/network">🌐 Browse businesses</Link><Link className="btn s" to="/agents">🤖 AI Agents</Link><Link className="btn s" to="/audit">🔍 Free AI Audit</Link></div></section></div>
 <div className="mq"><div className="mt">{[...Array(2)].map((_,k)=><span key={k} style={{display:'flex',gap:48}}>{['WEB APPS','AI AGENTS','AUTOMATION','VIDEO EDITING','MOTION GRAPHICS','SOCIAL MEDIA','BRANDING'].map(x=><span key={x}>{x} ✦</span>)}</span>)}</div></div>
 <div className="wrap"><h2><small>What we do</small>Everything your business needs to scale.</h2>
 <div className="bento">{SV.map(([i,t,d,c])=><div key={t} className={'card rv '+c}><div className="ic">{i}</div><h3>{t}</h3><p>{d}</p></div>)}</div>
@@ -58,18 +55,19 @@ function Home({u}){return <main>
 function Portfolio(){const b=useCol('businesses',['verified','==',true])
 return <main className="wrap"><h2><small>Portfolio</small>Our work</h2>
 {VIDEOS.length===0&&<p style={{color:'#8a87aa'}}>Showreel coming soon.</p>}
-<div className="grid" style={{gridTemplateColumns:'repeat(auto-fit,minmax(320px,1fr))'}}>{VIDEOS.map((v,i)=><div key={i}><Vid v={v}/><p style={{margin:'8px 0 0'}}>{v.title}</p></div>)}</div>
-<h2><small>Community</small>Verified businesses</h2><div className="grid">{b.map(x=><div className="card rv" key={x.id}><span className="tag">✓ Verified</span><h3>{x.name}</h3><small>{x.category}</small><p>{x.desc}</p>{x.link&&<a href={x.link} target="_blank" rel="noreferrer" style={{color:'var(--c)'}}>Visit →</a>}</div>)}</div></main>}
+<div className="grid" style={{gridTemplateColumns:'repeat(auto-fit,minmax(min(320px,100%),1fr))'}}>{VIDEOS.map((v,i)=><div key={i}><Vid v={v}/><p style={{margin:'8px 0 0'}}>{v.title}</p></div>)}</div>
+<h2><small>Community</small>Verified businesses</h2><div className="grid">{b.map(x=><div className="card rv" key={x.id}><span className="tag">✓ Verified</span><h3>{x.name}</h3><small>{x.category}</small><p>{x.desc}</p>{cleanUrl(x.link)&&<a href={cleanUrl(x.link)} target="_blank" rel="noreferrer" style={{color:'var(--c)'}}>Visit →</a>}</div>)}</div></main>}
 
 function Store({u}){const s=useCol('services');const[n,setN]=useState('')
-const order=async x=>{await addDoc(collection(db,'orders'),{uid:u.uid,email:u.email,title:x.title,type:x.category||'service',amount:x.price||0,status:'new',paid:false,t:serverTimestamp()});setN(x.title)}
-return <main className="wrap"><h2><small>Store</small>Services & Marketing</h2>{n&&<p style={{color:'var(--l)'}}>✅ Order placed for "{n}". Track it in your dashboard.</p>}
+const order=x=>requestService(u,x.title,x.category||'service',x.price||0).then(()=>setN(x.title)).catch(e=>toast(e.message||'Failed','err'))
+return <main className="wrap"><h2><small>Store</small>Services & Marketing</h2>{n&&<p style={{color:'var(--l)'}}>✅ Request sent for "{n}". <Link to="/dashboard" style={{color:'var(--c)'}}>Open your chat →</Link></p>}
 <div className="grid">{s.length===0&&<p style={{color:'#8a87aa'}}>Services coming soon.</p>}{s.map(x=><div className="card rv" key={x.id}><span className="tag">{x.category}</span><h3>{x.title}</h3><p>{x.desc}</p><h3>₹{x.price}</h3>
-{u?<button onClick={()=>order(x)}>Order now</button>:<button onClick={login}>Sign in to order</button>}</div>)}</div></main>}
+{u?<button onClick={()=>order(x)}>Request quote</button>:<button onClick={login}>Sign in to order</button>}</div>)}</div></main>}
 
 function Register({u}){const[f,setF]=useState({name:'',category:'',desc:'',link:''});const[busy,run]=useBusy();const nav=useNavigate()
 const go=e=>{e.preventDefault();run(async()=>{
-const b=await addDoc(collection(db,'businesses'),{...f,uid:u.uid,email:u.email,verified:false,t:serverTimestamp()})
+if(f.link&&!cleanUrl(f.link))throw new Error('That link looks invalid. Enter a website like example.com or leave it empty.')
+const b=await addDoc(collection(db,'businesses'),{...f,link:cleanUrl(f.link),uid:u.uid,email:u.email,verified:false,t:serverTimestamp()})
 const msg='Hi! I just registered "'+f.name+'" ('+f.category+'). Please verify my business.'
 const th=await addDoc(collection(db,'threads'),{uid:u.uid,members:[u.uid],email:u.email,subject:'Verification: '+f.name,last:msg,status:'open',type:'verify',bizId:b.id,t:serverTimestamp()})
 await addDoc(collection(db,'threads',th.id,'messages'),{text:msg,from:u.email,t:serverTimestamp()})
@@ -106,14 +104,15 @@ finance:<Manager title="Payments & expenses (type: income or expense)" col="fina
 work:<Manager title="Future work & AI agent links" col="work" fields={[{k:'title'},{k:'link'},{k:'status'}]}/>}
 return <main className="wrap"><h2><small>Admin</small>Control panel</h2><div className="tabs">{Object.keys(tabs).map(k=><button key={k} className={t===k?'':'s'} onClick={()=>setT(k)}>{k}</button>)}</div>{tabs[t]}</main>}
 
-function Page({children}){const{pathname}=useLocation();useEffect(()=>{scrollTo({top:0})},[pathname]);return <div key={pathname} className="pg">{children}</div>}
-export default function App(){const u=useUser();const[o,setO]=useState(false)
-return <><div className="bg"><i/><i/><i/></div><Toasts/>
+const SK={"/network":"network","/audit":"audit","/agents":"build","/store":"growth","/portfolio":"computer","/register":"chat"}
+function Page({children}){const{pathname}=useLocation();useEffect(()=>{scrollTo({top:0})},[pathname]);return <div key={pathname} className="pg">{SK[pathname]&&<PageStage kind={SK[pathname]}/>}{children}</div>}
+export default function App(){const u=useUser();const[o,setO]=useState(false);const[w3,setW3]=useState(()=>{try{return localStorage.getItem('kv_3d')!=='off'}catch{return true}})
+return <><div className="bg"><i/><i/><i/></div><World on={w3}/><Toasts/><Intro/>
 <nav><Link to="/" className="logo">Kelvora</Link><button className="s burger" onClick={()=>setO(!o)}>{o?'✕':'☰'}</button>
 <div className={'menu'+(o?' open':'')} onClick={()=>setO(false)}><Link className="l" to="/">Home</Link><Link className="l" to="/portfolio">Portfolio</Link><Link className="l" to="/agents">AI Agents</Link><Link className="l" to="/store">Store</Link><Link className="l" to="/audit">Free Audit</Link><Link className="l" to="/register">Register</Link>
-{u&&<><Link className="l" to="/network">Network</Link><Bell u={u}/></>}{isAdmin(u)&&<Link className="l" to="/admin">Admin</Link>}
+<Link className="l" to="/network">Network</Link>{u&&<Bell u={u}/>}<a className="l" href={PITCH} target="_blank" rel="noreferrer">Pitch ↗</a>{isAdmin(u)&&<Link className="l" to="/admin">Admin</Link>}
 {u?<button className="s" onClick={logout}>Sign out</button>:<button onClick={login}>Sign in</button>}</div></nav>
-<Page><Routes><Route path="/" element={<Home u={u}/>}/><Route path="/portfolio" element={<Portfolio/>}/><Route path="/store" element={<Store u={u}/>}/>
+<Page><Routes><Route path="/" element={<HomeRoot u={u} Contact={Contact} Need={Need}/>}/><Route path="/portfolio" element={<Portfolio/>}/><Route path="/store" element={<Store u={u}/>}/>
 <Route path="/register" element={<Register u={u}/>}/><Route path="/dashboard" element={<Need u={u}><div className="wrap"><Notices u={u}/></div><Dash u={u} Threads={Threads}/></Need>}/>
-<Route path="/admin" element={<Need u={u}><AdminPanel u={u} Threads={Threads}/></Need>}/><Route path="/network" element={<Need u={u}><Network u={u}/></Need>}/><Route path="/business/:id" element={<Need u={u}><BizPage u={u}/></Need>}/><Route path="/audit" element={<Need u={u}><AuditPage u={u}/></Need>}/><Route path="/agents" element={<AgentsPage u={u}/>}/><Route path="/profile/:id" element={<Need u={u}><ProfileEditor u={u}/></Need>}/><Route path="*" element={<Navigate to="/"/>}/></Routes></Page>
-<Bot u={u}/><footer>© 2026 Kelvora Infotech · kelvorainfortech.com</footer></>}
+<Route path="/admin" element={<Need u={u}><AdminPanel u={u} Threads={Threads}/></Need>}/><Route path="/network" element={<NetworkPage u={u}/>}/><Route path="/business/:id" element={<BizPage u={u}/>}/><Route path="/audit" element={<Need u={u}><AuditPage u={u}/></Need>}/><Route path="/agents" element={<AgentsPage u={u}/>}/><Route path="/profile/:id" element={<Need u={u}><ProfileEditor u={u}/></Need>}/><Route path="*" element={<Navigate to="/"/>}/></Routes></Page>
+<Tabs u={u}/><Bot u={u}/><footer>© 2026 Kelvora Infotech · kelvorainfortech.com · <a href={PITCH} target="_blank" rel="noreferrer" style={{color:'var(--c)'}}>Watch our pitch ↗</a> · <button className="s tg" onClick={()=>{try{localStorage.setItem('kv_3d',w3?'off':'on')}catch{};location.reload()}}>3D {w3?'on':'off'}</button></footer></>}

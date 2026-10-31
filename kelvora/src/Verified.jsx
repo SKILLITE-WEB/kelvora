@@ -1,4 +1,5 @@
-import {ProfileCard,Logo} from './Profile.jsx'
+import {ensureSupport} from './Support.jsx'
+import {ProfileCard,Logo,cleanUrl} from './Profile.jsx'
 import {useState,useEffect} from 'react'
 import {useNavigate,Link} from 'react-router-dom'
 import {collection,addDoc,updateDoc,setDoc,doc,onSnapshot,serverTimestamp} from 'firebase/firestore'
@@ -24,7 +25,7 @@ return <div className="vp"><div className="row"><b>{b.name}</b><span className="
 {admin&&b.link&&<p style={{marginTop:8}}><a href={b.link} target="_blank" rel="noreferrer" style={{color:'var(--c)'}}>Widget: {b.link}</a></p>}
 {!admin&&!b.verified&&<small style={{color:'#b9b6d6'}}>Our team will review and reply here. You can chat below.</small>}
 {!admin&&b.verified&&<div className="unlock"><Link className="btn" to="/network">🌐 Open Business Network</Link>
-<form onSubmit={e=>{e.preventDefault();run(async()=>{await setDoc(doc(db,'drafts',b.id),{uid:b.uid,data:{link:l},t:serverTimestamp()},{merge:true});await updateDoc(doc(db,'businesses',b.id),{profileStatus:'pending',submittedAt:serverTimestamp()});toast('Sent for approval')})}} style={{display:'flex',gap:8,maxWidth:'none',marginTop:12}}>
+<form onSubmit={e=>{e.preventDefault();run(async()=>{if(l&&!cleanUrl(l))throw new Error('Enter a valid link like example.com');await setDoc(doc(db,'drafts',b.id),{uid:b.uid,data:{link:cleanUrl(l)},t:serverTimestamp()},{merge:true});await updateDoc(doc(db,'businesses',b.id),{profileStatus:'pending',submittedAt:serverTimestamp()});toast('Sent for approval')})}} style={{display:'flex',gap:8,maxWidth:'none',marginTop:12}}>
 <input style={{flex:1}} placeholder="Add your widget / website link" value={l} onChange={e=>setL(e.target.value)}/><button disabled={busy}>Save</button></form></div>}</div>}
 
 function BizEdit({x}){const[f,setF]=useState({name:x.name,category:x.category,desc:x.desc||'',link:x.link||''});const[busy,run]=useBusy()
@@ -33,12 +34,12 @@ return <form onSubmit={e=>{e.preventDefault();run(async()=>{await updateDoc(doc(
 {[['name','Business name'],['category','Category'],['link','Website / widget link']].map(([k,p])=><input key={k} placeholder={p} value={f[k]} onChange={e=>setF({...f,[k]:e.target.value})}/>)}
 <textarea rows="3" placeholder="Description" value={f.desc} onChange={e=>setF({...f,desc:e.target.value})}/><button disabled={busy}>Save changes</button></form>}
 
-export function Dash({u,Threads}){const o=useCol('orders',['uid','==',u.uid]);const b=useCol('businesses',['uid','==',u.uid]);const ver=useVerified(u)
+export function Dash({u,Threads}){const o0=useCol('orders',['uid','==',u.uid]);const o=o0.filter(x=>!['requested','quoted','declined'].includes(x.status));const pend=o0.filter(x=>['requested','quoted'].includes(x.status)).length;const b=useCol('businesses',['uid','==',u.uid]);const ver=useVerified(u);useEffect(()=>{ensureSupport(u).catch(()=>{})},[u.uid])
 return <main className="wrap"><h2><small>Dashboard</small>Welcome back</h2>
-{b.length===0&&<div className="card" style={{marginBottom:14}}>You have not registered a business yet. <Link to="/register" style={{color:'var(--c)'}}>Register now →</Link></div>}
+{b.length===0&&<div className="card" style={{marginBottom:14}}>Want to join the Business Network? Registering your business is optional. <Link to="/register" style={{color:'var(--c)'}}>Register now →</Link></div>}
 {ver&&<div className="card glow" style={{marginBottom:14}}>🎉 You are verified. <Link to="/network" style={{color:'var(--c)'}}>Open Business Network →</Link></div>}
-<h3 style={{marginBottom:12}}>Chats</h3><Threads u={u}/>
-<h3 style={{margin:'32px 0 12px'}}>Orders</h3><div className="grid">{o.length===0&&<p style={{color:'#8a87aa'}}>No orders yet.</p>}{o.map(x=><div className="card" key={x.id}><b>{x.title}</b><p>₹{x.amount}{x.due&&<small> · Due {x.due}</small>}</p><span className="tag">{x.status}</span> <span className="tag">{x.paid?'Paid':'Unpaid'}</span><Prog s={x.status}/></div>)}</div>
+{pend>0&&<div className="card glow" style={{marginBottom:14}}>🧾 {pend} request(s) in progress. Open your Kelvora Support chat below.</div>}<h3 style={{marginBottom:12}}>Chats</h3><Threads u={u}/>
+<h3 style={{margin:'32px 0 12px'}}>Orders</h3><div className="grid">{o.length===0&&<p style={{color:'#8a87aa'}}>No orders yet. Request a service to get started.</p>}{o.map(x=><div className="card" key={x.id}><b>{x.title}</b><p>₹{x.amount}{x.due&&<small> · Due {x.due}</small>}</p><span className="tag">{x.status}</span> <span className="tag">{x.paid?'Paid':'Unpaid'}</span><Prog s={x.status}/></div>)}</div>
 {b.length>0&&<><h3 style={{margin:'32px 0 12px'}}>My business profile</h3><div className="grid">{b.map(x=><ProfileCard key={x.id} x={x}/>)}</div></>}</main>}
 
 export function Network({u}){const ver=useVerified(u);const list=useCol('businesses',['verified','==',true]);const nav=useNavigate();const[busy,run]=useBusy()

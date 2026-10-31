@@ -1,3 +1,4 @@
+import {cleanUrl} from './Profile.jsx'
 import {Link} from 'react-router-dom'
 import {Approvals} from './Profile.jsx'
 import {ScoutBox} from './Scout.jsx'
@@ -27,12 +28,12 @@ return <div><Head title={title} n={d.length} q={q} setQ={setQ} rows={d} name={co
 function Orders({staff}){const o=useCol('orders');const[f,setF]=useState({title:'',email:'',amount:'',due:''});const[q,setQ]=useState('')
 const up=(r,p)=>updateDoc(doc(db,'orders',r.id),p)
 const add=async e=>{e.preventDefault();await addDoc(collection(db,'orders'),{uid:'',title:f.title,email:f.email,amount:Number(f.amount)||0,due:f.due,type:'manual',status:'new',paid:false,urgent:false,t:serverTimestamp()});setF({title:'',email:'',amount:'',due:''});toast('Order added')}
-const L=o.filter(r=>has(r,q)).sort((a,b)=>(!!late(b)-!!late(a))||(!!b.urgent-!!a.urgent)||(a.due||'9').localeCompare(b.due||'9'))
+const L=o.filter(r=>has(r,q)&&!['requested','quoted','declined'].includes(r.status)).sort((a,b)=>(!!late(b)-!!late(a))||(!!b.urgent-!!a.urgent)||(a.due||'9').localeCompare(b.due||'9'))
 return <div><Head title="Orders" n={o.length} q={q} setQ={setQ} rows={o} name="orders"/>
 <form onSubmit={add} style={{display:'flex',gap:8,flexWrap:'wrap',maxWidth:'none',marginBottom:12}}><input required style={{flex:2,minWidth:150}} placeholder="Order title" value={f.title} onChange={e=>setF({...f,title:e.target.value})}/>
 <input style={{flex:2,minWidth:150}} placeholder="Client email" value={f.email} onChange={e=>setF({...f,email:e.target.value})}/><input style={{flex:1,minWidth:90}} placeholder="₹ amount" value={f.amount} onChange={e=>setF({...f,amount:e.target.value})}/>
 <input type="date" style={{flex:1,minWidth:140}} value={f.due} onChange={e=>setF({...f,due:e.target.value})}/><button>Add order</button></form>
-<div className="grid" style={{gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))'}}>{L.map(r=><div key={r.id} className={'card ord '+(late(r)?'late':r.urgent?'urg':'')}>
+<div className="grid" style={{gridTemplateColumns:'repeat(auto-fill,minmax(min(300px,100%),1fr))'}}>{L.map(r=><div key={r.id} className={'card ord '+(late(r)?'late':r.urgent?'urg':'')}>
 <div className="row"><b>{r.title}</b>{late(r)&&<span className="tag r">OVERDUE</span>}{r.urgent&&<span className="tag r">URGENT</span>}{r.paid&&<span className="tag">Paid</span>}</div>
 <small>{r.email}</small><p>₹{r.amount}</p>
 <div className="row"><label><small>Due</small><input type="date" value={r.due||''} onChange={e=>up(r,{due:e.target.value})}/></label>
@@ -53,23 +54,25 @@ return <div><Head title="Clients" n={b.length} q={q} setQ={setQ} rows={b} name="
 return <div className="card rv" key={r.id}><div className="row"><b>{r.name}</b><span className="tag">{r.verified?'✓ Verified':'⏳ Pending'}</span></div><small>{r.category}</small>
 <p><a href={mail(r.email,'Kelvora Infotech')} style={{color:'var(--c)'}}>✉ {r.email}</a></p>
 <small>{mo.length} orders · ₹{mo.filter(x=>x.paid).reduce((a,x)=>a+(x.amount||0),0)} paid</small>
-{r.link&&<p><a href={r.link} target="_blank" rel="noreferrer" style={{color:'var(--c)'}}>Widget ↗</a></p>}
+{cleanUrl(r.link)&&<p><a href={cleanUrl(r.link)} target="_blank" rel="noreferrer" style={{color:'var(--c)'}}>Widget ↗</a></p>}
 <div className="row" style={{margin:'10px 0'}}><button className="s" onClick={()=>run(()=>verify(r))}>{r.verified?'Unverify':'✓ Verify'}</button><Link className="btn s" to={'/profile/'+r.id}>✏️ Profile</Link><button onClick={()=>setT(r)}>🔔 Send notice</button></div>
 {mn.map(x=><div key={x.id} className="vp"><span className="tag">{x.kind==='questionnaire'?'📋':'🔔'} {x.status}</span> <small>{x.text}</small>{x.status==='answered'&&x.qs.map((qq,i)=><p key={i} style={{fontSize:13}}><small>{qq}</small><br/>{x.answers[i]}</p>)}</div>)}</div>})}</div></div>}
 
-function Overview(){const o=useCol('orders');const f=useCol('finance');const b=useCol('businesses');const n=useCol('notices');const th=useCol('threads')
-const lt=o.filter(late),ur=o.filter(r=>r.urgent&&r.status!=='done');const rev=o.filter(x=>x.paid).reduce((a,x)=>a+(x.amount||0),0)+f.filter(x=>x.type==='income').reduce((a,x)=>a+(x.amount||0),0)
+function Overview({go}){const o=useCol('orders');const f=useCol('finance');const b=useCol('businesses');const n=useCol('notices');const th=useCol('threads')
+const lt=o.filter(r=>late(r)&&['new','working'].includes(r.status)),ur=o.filter(r=>r.urgent&&['new','working'].includes(r.status)),live=o.filter(x=>['new','working','done'].includes(x.status))
+const rev=live.filter(x=>x.paid).reduce((a,x)=>a+(x.amount||0),0)+f.filter(x=>x.type==='income').reduce((a,x)=>a+(x.amount||0),0)
 const exp=f.filter(x=>x.type==='expense').reduce((a,x)=>a+(x.amount||0),0)
-const al=[['🚨 Overdue orders',lt.length,'r'],['🔥 Urgent orders',ur.length,'r'],['⏳ Pending verifications',b.filter(x=>!x.verified).length,''],['📋 Unanswered questionnaires',n.filter(x=>x.kind==='questionnaire'&&x.status==='sent').length,''],['📝 Profile updates to review',b.filter(x=>x.profileStatus==='pending').length,'r'],['💬 Open chats',th.filter(x=>x.status==='open').length,'']]
-return <div style={{marginTop:16}}><div className="grid">{al.map(([k,v,c])=><div key={k} className={'card '+(c&&v?'ord late':'')}><small>{k}</small><h2 style={{margin:0}}>{v}</h2></div>)}</div>
-<div className="grid" style={{marginTop:14}}>{[['Clients',b.length],['Orders',o.length],['Completed',o.filter(x=>x.status==='done').length],['Revenue ₹',rev],['Expenses ₹',exp],['Profit ₹',rev-exp]].map(([k,v])=><div className="card" key={k}><small>{k}</small><h2 style={{margin:0}} className="grad">{v}</h2></div>)}</div></div>}
+const al=[['🧾','Requests awaiting quote',o.filter(x=>x.status==='requested').length,'inquiries','r'],['💰','Quotes awaiting client',o.filter(x=>x.status==='quoted').length,'inquiries',''],['🚨','Overdue orders',lt.length,'orders','r'],['🔥','Urgent orders',ur.length,'orders','r'],['⏳','Pending verifications',b.filter(x=>!x.verified).length,'clients',''],['📝','Profile updates to review',b.filter(x=>x.profileStatus==='pending').length,'approvals','r'],['📋','Unanswered questionnaires',n.filter(x=>x.kind==='questionnaire'&&x.status==='sent').length,'clients',''],['💬','Open chats',th.filter(x=>x.status==='open').length,'inquiries','']]
+const st=[['Clients',b.length,'clients'],['Orders',live.length,'orders'],['Completed',live.filter(x=>x.status==='done').length,'orders'],['Revenue ₹',rev,'finance'],['Expenses ₹',exp,'finance'],['Profit ₹',rev-exp,'finance']]
+return <div style={{marginTop:16}}><p style={{color:'#8a87aa',marginBottom:10}}>Tap any card to open it.</p><div className="grid">{al.map(([i,k,v,t,c])=><button key={k} className={'card alc '+(c&&v?'ord late':'')} onClick={()=>go(t)}><small>{i} {k}</small><h2>{v}</h2><small style={{color:'var(--c)'}}>Open {t} →</small></button>)}</div>
+<div className="grid" style={{marginTop:14}}>{st.map(([k,v,t])=><button className="card alc" key={k} onClick={()=>go(t)}><small>{k}</small><h2 className="grad">{v}</h2></button>)}</div></div>}
 
-export default function Admin({u,Threads}){const[t,setT]=useState('overview');const staff=useCol('staff')
+export default function Admin({u,Threads}){const[t,setT0]=useState(()=>(location.hash||'').slice(1)||'overview');const setT=k=>{setT0(k);try{history.replaceState(null,'','#'+k)}catch{};scrollTo({top:0,behavior:'smooth'})};const staff=useCol('staff')
 if(!isAdmin(u))return <main className="wrap"><h2>No access</h2></main>
-const tabs={overview:<Overview/>,approvals:<Approvals/>,clients:<Clients/>,orders:<Orders staff={staff}/>,inquiries:<div style={{marginTop:16}}><Threads u={u} admin/></div>,
+const tabs={overview:<Overview go={setT}/>,approvals:<Approvals/>,clients:<Clients/>,orders:<Orders staff={staff}/>,inquiries:<div style={{marginTop:16}}><Threads u={u} admin/></div>,
 scout:<ScoutBox u={u} admin/>,
 employees:<Manager title="Employees" col="staff" fields={['name','email','phone','role','task']}/>,
 finance:<Manager title="Payments & expenses (type: income or expense)" col="finance" fields={['title','type','amount']} num={['amount']}/>,
 work:<Manager title="Future work & AI agents" col="work" fields={['title','link','status']}/>,
 services:<Manager title="Store services" col="services" fields={['title','category','desc','price']} num={['price']}/>}
-return <main className="wrap"><h2><small>Admin</small>Management</h2><div className="tabs">{Object.keys(tabs).map(k=><button key={k} className={t===k?'':'s'} onClick={()=>setT(k)}>{k}</button>)}</div>{tabs[t]}</main>}
+return <main className="wrap"><h2><small>Admin</small>Management</h2><div className="tabs">{Object.keys(tabs).map(k=><button key={k} className={t===k?'':'s'} onClick={()=>setT(k)}>{k}</button>)}</div>{tabs[t]||tabs.overview}</main>}
