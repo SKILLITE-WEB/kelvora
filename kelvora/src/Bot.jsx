@@ -2,7 +2,7 @@ import {useState,useEffect,useRef} from 'react'
 import {useNavigate} from 'react-router-dom'
 import {collection,addDoc,serverTimestamp} from 'firebase/firestore'
 import {db,login} from './firebase.js'
-import {useVerified} from './Verified.jsx'
+import {useVerified} from './hooks.js'
 import {toast} from './Ui.jsx'
 
 const KB=[

@@ -5,7 +5,7 @@ import {toast,useBusy,Spin} from './Ui.jsx'
 
 export const supportId=uid=>'support_'+uid
 export async function ensureSupport(u){const ref=doc(db,'threads',supportId(u.uid));const s=await getDoc(ref).catch(()=>null)
-if(!s||!s.exists())await setDoc(ref,{uid:u.uid,members:[u.uid],email:u.email,subject:'Kelvora Support',last:'Chat started',status:'open',type:'support',t:serverTimestamp()});return ref.id}
+if(!s||!s.exists())await setDoc(ref,{uid:u.uid,members:[u.uid],email:u.email,subject:'Kelvora Support',last:'Chat started',status:'open',type:'support',t:serverTimestamp()}).catch(e=>{if(e?.code!=='permission-denied')throw e});return ref.id}
 export async function requestService(u,title,type,amount=0){const tid=await ensureSupport(u)
 const o=await addDoc(collection(db,'orders'),{uid:u.uid,email:u.email,title,type,amount:Number(amount)||0,due:'',notes:'',status:'requested',paid:false,urgent:false,tid,t:serverTimestamp()})
 await addDoc(collection(db,'threads',tid,'messages'),{kind:'order',orderId:o.id,text:'Requested: '+title,from:u.email,t:serverTimestamp()})

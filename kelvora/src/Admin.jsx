@@ -1,14 +1,16 @@
+import {today} from './date.js'
 import {cleanUrl} from './Profile.jsx'
 import {Link} from 'react-router-dom'
 import {Approvals} from './Profile.jsx'
 import {ScoutBox} from './Scout.jsx'
-import {useState} from 'react'
-import {collection,addDoc,updateDoc,deleteDoc,doc,serverTimestamp} from 'firebase/firestore'
+import {useState,lazy,Suspense} from 'react'
+import {adminKind,WsFlag} from './workspace/state.js'
+const WS=lazy(()=>import('./workspace/Workspace.jsx'))
+import {collection,addDoc,updateDoc,deleteDoc,setDoc,deleteField,doc,serverTimestamp} from 'firebase/firestore'
 import {db,useCol,isAdmin} from './firebase.js'
 import {verify} from './Verified.jsx'
 import {toast,useBusy} from './Ui.jsx'
 
-const today=()=>new Date().toISOString().slice(0,10)
 const mail=(to,sub,body='')=>`mailto:${to}?subject=${encodeURIComponent(sub)}&body=${encodeURIComponent(body)}`
 const has=(r,q)=>JSON.stringify(r).toLowerCase().includes(q.toLowerCase())
 const csv=(rows,name)=>{if(!rows.length)return toast('Nothing to export','err');const k=[...new Set(rows.flatMap(r=>Object.keys(r)))].filter(x=>x!=='t'&&typeof rows[0][x]!=='object');const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"'
@@ -33,7 +35,7 @@ return <div><Head title="Orders" n={o.length} q={q} setQ={setQ} rows={o} name="o
 <form onSubmit={add} style={{display:'flex',gap:8,flexWrap:'wrap',maxWidth:'none',marginBottom:12}}><input required style={{flex:2,minWidth:150}} placeholder="Order title" value={f.title} onChange={e=>setF({...f,title:e.target.value})}/>
 <input style={{flex:2,minWidth:150}} placeholder="Client email" value={f.email} onChange={e=>setF({...f,email:e.target.value})}/><input style={{flex:1,minWidth:90}} placeholder="₹ amount" value={f.amount} onChange={e=>setF({...f,amount:e.target.value})}/>
 <input type="date" style={{flex:1,minWidth:140}} value={f.due} onChange={e=>setF({...f,due:e.target.value})}/><button>Add order</button></form>
-<div className="grid" style={{gridTemplateColumns:'repeat(auto-fill,minmax(min(300px,100%),1fr))'}}>{L.map(r=><div key={r.id} className={'card ord '+(late(r)?'late':r.urgent?'urg':'')}>
+<div className="grid" style={{gridTemplateColumns:'repeat(auto-fill,minmax(min(300px,100%),1fr))'}}>{L.length===0&&<WsFlag s="empty"/>}{L.map(r=><div key={r.id} className={'card ord '+(late(r)?'late':r.urgent?'urg':'')}>
 <div className="row"><b>{r.title}</b>{late(r)&&<span className="tag r">OVERDUE</span>}{r.urgent&&<span className="tag r">URGENT</span>}{r.paid&&<span className="tag">Paid</span>}</div>
 <small>{r.email}</small><p>₹{r.amount}</p>
 <div className="row"><label><small>Due</small><input type="date" value={r.due||''} onChange={e=>up(r,{due:e.target.value})}/></label>
@@ -43,7 +45,7 @@ return <div><Head title="Orders" n={o.length} q={q} setQ={setQ} rows={o} name="o
 {r.email&&<a className="btn s" href={mail(r.email,'Update on your order: '+r.title)}>✉</a>}<button className="s" onClick={()=>deleteDoc(doc(db,'orders',r.id))}>🗑</button></div></div>)}</div></div>}
 
 const DEFQ="What is the main goal of your widget?\nWhich pages should it appear on?\nBrand colors / logo link\nAny deadline or urgent need?"
-function Clients(){const b=useCol('businesses');const o=useCol('orders');const n=useCol('notices');const[t,setT]=useState(null);const[kind,setKind]=useState('reminder');const[txt,setTxt]=useState('');const[qs,setQs]=useState(DEFQ);const[q,setQ]=useState('');const[busy,run]=useBusy()
+function Clients(){const b0=useCol('businesses');const pv=useCol('bizPrivate');const em=new Map(pv.map(x=>[x.id,x.email]));const b=b0.map(x=>({...x,email:em.get(x.id)||x.email||''}));const o=useCol('orders');const n=useCol('notices');const[t,setT]=useState(null);const[kind,setKind]=useState('reminder');const[txt,setTxt]=useState('');const[qs,setQs]=useState(DEFQ);const[q,setQ]=useState('');const[busy,run]=useBusy()
 const send=()=>run(async()=>{await addDoc(collection(db,'notices'),{uid:t.uid,biz:t.name,email:t.email,kind,text:txt,qs:kind==='questionnaire'?qs.split('\n').filter(Boolean):[],answers:[],status:'sent',t:serverTimestamp()});toast('Sent to '+t.name);setTxt('');setT(null)})
 return <div><Head title="Clients" n={b.length} q={q} setQ={setQ} rows={b} name="clients"/>
 {t&&<div className="card glow" style={{marginBottom:14}}><div className="row"><b>Send to {t.name}</b><select style={{width:'auto'}} value={kind} onChange={e=>setKind(e.target.value)}><option value="reminder">🔔 Reminder</option><option value="questionnaire">📋 Widget questionnaire</option></select></div>
@@ -75,4 +77,4 @@ employees:<Manager title="Employees" col="staff" fields={['name','email','phone'
 finance:<Manager title="Payments & expenses (type: income or expense)" col="finance" fields={['title','type','amount']} num={['amount']}/>,
 work:<Manager title="Future work & AI agents" col="work" fields={['title','link','status']}/>,
 services:<Manager title="Store services" col="services" fields={['title','category','desc','price']} num={['price']}/>}
-return <main className="wrap"><h2><small>Admin</small>Management</h2><div className="tabs">{Object.keys(tabs).map(k=><button key={k} className={t===k?'':'s'} onClick={()=>setT(k)}>{k}</button>)}</div>{tabs[t]||tabs.overview}</main>}
+return <main className="wrap"><h2><small>Admin</small>Management</h2><Suspense fallback={null}><WS kind={adminKind(t)}/></Suspense><div className="tabs">{Object.keys(tabs).map(k=><button key={k} className={t===k?'':'s'} onClick={()=>setT(k)}>{k}</button>)}</div>{tabs[t]||tabs.overview}</main>}

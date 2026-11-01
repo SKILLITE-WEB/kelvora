@@ -6,8 +6,8 @@ import {toast,useBusy,Spin} from './Ui.jsx'
 
 const IC={instagram:['📷','Instagram'],linkedin:['in','LinkedIn'],google:['📍','Google'],youtube:['▶','YouTube'],facebook:['f','Facebook']}
 const BASIC=['name','category','desc','link']
-export const cleanUrl=s=>{s=String(s||'').trim();if(!s||/\s/.test(s))return '';if(!/^https?:\/\//i.test(s)){if(/^[a-z][a-z0-9+.-]*:/i.test(s))return '';s='https://'+s}
-try{const u=new URL(s);return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(u.hostname)?u.href:''}catch{return ''}}
+import {useVerified,cleanUrl} from './hooks.js'
+export {cleanUrl}
 const safe=s=>cleanUrl(s)||'#'
 const cache=new Map()
 export function Img({id,alt='',className='',style}){const[s,setS]=useState(cache.get(id)||'')
@@ -16,9 +16,13 @@ let on=true;getDoc(doc(db,'images',id)).then(d=>{if(d.exists()){cache.set(id,d.d
 return s?<img src={s} alt={alt} className={className} style={style}/>:null}
 export const Logo=({b,s=56})=><div className="lg" style={{width:s,height:s,fontSize:s/2.2}}>{b?.profile?.logo?<Img id={b.profile.logo} alt={b.name} style={{width:'100%',height:'100%',objectFit:'cover'}}/>:(b?.name||'?')[0]}</div>
 
-async function shrink(file,max,limit){const bmp=await createImageBitmap(file);const k=Math.min(1,max/Math.max(bmp.width,bmp.height));const cv=document.createElement('canvas');cv.width=Math.round(bmp.width*k);cv.height=Math.round(bmp.height*k)
-cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height);let q=.85,url='';for(let i=0;i<6;i++){url=cv.toDataURL('image/webp',q);if(url.length<limit)break;q-=.13}
-if(url.length>=limit)throw new Error('Image is too big. Try a smaller one.');return url}
+async function shrink(file,max,limit){let bmp;try{bmp=await createImageBitmap(file)}catch{throw new Error('This photo format is not supported. Try a JPG or PNG (iPhone: Settings > Camera > Formats > Most Compatible).')}
+let sc=Math.min(1,max/Math.max(bmp.width,bmp.height)),url=''
+for(let a=0;a<4;a++){const cv=document.createElement('canvas');cv.width=Math.max(1,Math.round(bmp.width*sc));cv.height=Math.max(1,Math.round(bmp.height*sc));cv.getContext('2d').drawImage(bmp,0,0,cv.width,cv.height)
+const ty=cv.toDataURL('image/webp',.85).startsWith('data:image/webp')?'image/webp':'image/jpeg';let q=.85
+for(let i=0;i<6;i++){url=cv.toDataURL(ty,q);if(url.length<limit)return url;q-=.13}
+sc*=.75}
+throw new Error('Image is too big. Try a smaller one.')}
 function ImgField({label,v,on,max=1200,limit=280000}){const[busy,run]=useBusy()
 const pick=e=>{const f=e.target.files?.[0];if(!f)return;run(async()=>{if(!/^image\//.test(f.type))throw new Error('Please choose an image');const data=await shrink(f,max,limit);const r=await addDoc(collection(db,'images'),{uid:auth.currentUser.uid,data,t:serverTimestamp()});on(r.id)})}
 return <div><small>{label}</small><div className="row" style={{marginTop:6}}>{v?<Img id={v} className="th"/>:<div className="th none">none</div>}<label className="btn s">{busy?'Uploading…':'Upload'}<input type="file" accept="image/*" hidden onChange={pick}/></label>{v&&<button type="button" className="s" onClick={()=>on('')}>Remove</button>}</div></div>}
@@ -29,7 +33,9 @@ const ListEd=({title,items,max,fields,onChange,blank})=><div className="card"><b
 const BLANK={tagline:'',logo:'',cover:'',accent:'#7c5cff',about:'',location:'',founded:'',team:'',instagram:'',linkedin:'',google:'',youtube:'',facebook:'',email:'',phone:'',offering:'',lookingFor:'',services:[],highlights:[],gallery:['','','','']}
 const merge=(b,d)=>d?{...b,...d,profile:{...BLANK,...(b.profile||{}),...(d.profile||{})}}:{...b,profile:{...BLANK,...(b.profile||{})}}
 
-export function ProfileEditor({u}){const{id}=useParams();const[b,setB]=useState(undefined);const[f,setF]=useState(null);const[busy,run]=useBusy();const adm=isAdmin(u);const nav=useNavigate()
+const usePriv=id=>{const[p,s]=useState({});useEffect(()=>id?onSnapshot(doc(db,'bizPrivate',id),d=>s(d.exists()?d.data():{}),()=>s({})):undefined,[id]);return p}
+const Note=({id})=>usePriv(id).adminNote||''
+export function ProfileEditor({u}){const{id}=useParams();const[b,setB]=useState(undefined);const[f,setF]=useState(null);const[busy,run]=useBusy();const adm=isAdmin(u);const nav=useNavigate();const pv=usePriv(id)
 useEffect(()=>{(async()=>{try{const bs=await getDoc(doc(db,'businesses',id));if(!bs.exists())return setB(null);const biz={id:bs.id,...bs.data()};let d=null
 try{const ds=await getDoc(doc(db,'drafts',id));if(ds.exists())d=ds.data().data}catch{}
 const m=merge({name:biz.name||'',category:biz.category||'',desc:biz.desc||'',link:biz.link||'',profile:biz.profile},d);setB(biz);setF({name:m.name,category:m.category,desc:m.desc,link:m.link,profile:m.profile})}catch{setB(null)}})()},[id])
@@ -38,11 +44,11 @@ if(!b||(!adm&&b.uid!==u.uid))return <main className="wrap"><h2>Not found or no a
 const P=(k,v)=>setF(x=>({...x,profile:{...x.profile,[k]:v}}));const T=(k,v)=>setF(x=>({...x,[k]:v}));const p=f.profile
 const bad=()=>{const k=[];if(f.link&&!cleanUrl(f.link))k.push('Widget link');Object.keys(IC).forEach(x=>{if(p[x]&&!cleanUrl(p[x]))k.push(IC[x][1])});return k}
 const draft=submit=>run(async()=>{const e=bad();if(e.length)throw new Error('Invalid link: '+e.join(', ')+'. Use a real address like example.com');await setDoc(doc(db,'drafts',id),{uid:b.uid,data:f,t:serverTimestamp()});if(submit){await updateDoc(doc(db,'businesses',id),{profileStatus:'pending',submittedAt:serverTimestamp()});toast('Sent to Kelvora for approval');nav('/dashboard')}else toast('Draft saved')})
-const publish=()=>run(async()=>{const e=bad();if(e.length)throw new Error('Invalid link: '+e.join(', ')+'. Use a real address like example.com');await updateDoc(doc(db,'businesses',id),{name:f.name,category:f.category,desc:f.desc,link:f.link,profile:f.profile,profileStatus:'approved',adminNote:''});await deleteDoc(doc(db,'drafts',id)).catch(()=>{})
-await addDoc(collection(db,'notices'),{uid:b.uid,biz:f.name,email:b.email||'',kind:'reminder',text:'✏️ Kelvora updated your business profile.',qs:[],answers:[],status:'sent',t:serverTimestamp()});toast('Published');nav('/business/'+id)})
+const publish=()=>run(async()=>{const e=bad();if(e.length)throw new Error('Invalid link: '+e.join(', ')+'. Use a real address like example.com');await updateDoc(doc(db,'businesses',id),{name:f.name,category:f.category,desc:f.desc,link:f.link,profile:f.profile,profileStatus:'approved'});await setDoc(doc(db,'bizPrivate',id),{uid:b.uid,adminNote:''},{merge:true});await deleteDoc(doc(db,'drafts',id)).catch(()=>{})
+await addDoc(collection(db,'notices'),{uid:b.uid,biz:f.name,email:pv.email||b.email||'',kind:'reminder',text:'✏️ Kelvora updated your business profile.',qs:[],answers:[],status:'sent',t:serverTimestamp()});toast('Published');nav('/business/'+id)})
 return <main className="wrap"><Link to={adm?'/admin':'/dashboard'} style={{color:'var(--c)'}}>← Back</Link><h2><small>{adm?'Admin edit':'Your profile'}</small>Business profile</h2>
 {b.profileStatus==='pending'&&<div className="card glow" style={{marginBottom:12}}>⏳ Your changes are waiting for Kelvora approval. Your public page updates once approved.</div>}
-{b.profileStatus==='rejected'&&<div className="card ord late" style={{marginBottom:12}}>❌ Please update: {b.adminNote}</div>}
+{b.profileStatus==='rejected'&&<div className="card ord late" style={{marginBottom:12}}>❌ Please update: {pv.adminNote}</div>}
 <div className="pe">
 <div className="card"><b>Branding</b><div className="pe two" style={{marginTop:10}}><ImgField label="Logo (square works best)" v={p.logo} on={v=>P('logo',v)} max={400} limit={90000}/><ImgField label="Cover image (wide)" v={p.cover} on={v=>P('cover',v)} max={1400} limit={300000}/><In l="Brand color" type="color" v={p.accent} on={v=>P('accent',v)}/></div></div>
 <div className="card"><b>Basics</b><div className="pe two" style={{marginTop:10}}><In l="Business name" v={f.name} on={v=>T('name',v)}/><In l="Category" v={f.category} on={v=>T('category',v)}/><In l="Tagline (one line)" v={p.tagline} on={v=>P('tagline',v)}/><In l="Widget / website link" v={f.link} on={v=>T('link',v)}/></div><div style={{marginTop:10}}><In l="Short description" area v={f.desc} on={v=>T('desc',v)}/></div></div>
@@ -58,9 +64,8 @@ return <main className="wrap"><Link to={adm?'/admin':'/dashboard'} style={{color
 {!adm&&<small style={{color:'#8a87aa'}}>Your public page changes only after Kelvora approves. We will notify you.</small>}</div></main>}
 
 export const ProfileCard=({x})=><div className="card"><div className="row"><Logo b={x} s={48}/><div><b>{x.name}</b><br/><span className="tag">{x.verified?'✓ Verified':'⏳ Pending'}</span> {x.profileStatus==='pending'&&<span className="tag v">update in review</span>} {x.profileStatus==='rejected'&&<span className="tag r">changes needed</span>}</div></div>
-{x.profileStatus==='rejected'&&<p style={{fontSize:13,marginTop:6}}>{x.adminNote}</p>}<div className="row" style={{marginTop:10}}><Link className="btn" to={'/profile/'+x.id}>✏️ Edit profile</Link><Link className="btn s" to={'/business/'+x.id}>View page</Link></div></div>
+{x.profileStatus==='rejected'&&<p style={{fontSize:13,marginTop:6}}><Note id={x.id}/></p>}<div className="row" style={{marginTop:10}}><Link className="btn" to={'/profile/'+x.id}>✏️ Edit profile</Link><Link className="btn s" to={'/business/'+x.id}>View page</Link></div></div>
 
-function useVer(u){const[v,s]=useState(false);useEffect(()=>u?onSnapshot(doc(db,'users',u.uid),d=>s(!!d.data()?.verified),()=>s(false)):undefined,[u?.uid]);return v}
 function Deck({b,p,onClose}){const el=useRef();const[i,setI]=useState(0);const gal=(p.gallery||[]).filter(Boolean)
 const S=[<><Logo b={b} s={110}/><h1>{b.name}</h1><p>{p.tagline||b.desc}</p><span className="tag v">{b.category}</span></>,
 (p.about||b.desc)&&<><h1>About</h1><p>{p.about||b.desc}</p></>,
@@ -75,7 +80,7 @@ return()=>{removeEventListener('keydown',k);document.removeEventListener('fullsc
 return <div className="deck" ref={el} style={{'--ac':p.accent||'#7c5cff'}}><div className="slide" key={i} onClick={()=>setI(x=>Math.min(x+1,S.length-1))}>{S[i]}</div>
 <div className="dn"><button className="s" onClick={()=>setI(x=>Math.max(x-1,0))}>←</button><span className="dots">{S.map((_,k)=><i key={k} className={k===i?'on':''}/>)}</span><button className="s" onClick={()=>setI(x=>Math.min(x+1,S.length-1))}>→</button><button onClick={onClose}>✕ Close</button></div></div>}
 
-export function BizPage({u}){const{id}=useParams();const loc=useLocation();const nav=useNavigate();const[b0,setB]=useState(undefined);const[dr,setDr]=useState(null);const ver=useVer(u);const[busy,run]=useBusy();const[deck,setDeck]=useState(false);const[live,setLive]=useState(false);const pv=useRef()
+export function BizPage({u}){const{id}=useParams();const loc=useLocation();const nav=useNavigate();const[b0,setB]=useState(undefined);const[dr,setDr]=useState(null);const ver=useVerified(u);const[busy,run]=useBusy();const[deck,setDeck]=useState(false);const[live,setLive]=useState(false);const pv=useRef()
 const wd=new URLSearchParams(loc.search).get('draft')==='1'
 useEffect(()=>onSnapshot(doc(db,'businesses',id),d=>setB(d.exists()?{id:d.id,...d.data()}:null),()=>setB(null)),[id])
 useEffect(()=>{if(!wd){setDr(null);return}return onSnapshot(doc(db,'drafts',id),d=>setDr(d.exists()?d.data().data:null),()=>setDr(null))},[id,wd])
@@ -103,7 +108,7 @@ return <main className="wrap" style={{'--ac':p.accent||'#7c5cff'}}>
 {!live?<button className="s" style={{marginTop:10}} onClick={()=>setLive(true)}>▶ Load live preview</button>:<><iframe ref={pv} title="widget" src={wl} loading="lazy" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" style={{width:'100%',height:420,border:0,borderRadius:14,background:'#fff',marginTop:10}}/><small>Blank or refused to connect? That website blocks previews. Use Open ↗.</small></>}</div>}</div>
 {deck&&<Deck b={b} p={p} onClose={()=>setDeck(false)}/>}</main>}
 
-export function NetworkPage({u}){const list=useCol('businesses',['verified','==',true]);const ver=useVer(u);const[q,setQ]=useState('')
+export function NetworkPage({u}){const list=useCol('businesses',['verified','==',true]);const ver=useVerified(u);const[q,setQ]=useState('')
 const L=list.filter(x=>JSON.stringify([x.name,x.category,x.desc,x.profile?.tagline]).toLowerCase().includes(q.toLowerCase()))
 return <main className="wrap"><h2><small>Network</small>Verified businesses</h2>
 <p style={{color:'#b9b6d6',marginBottom:12}}>Anyone can browse and view profiles. Verified businesses can also chat and collaborate.</p>
@@ -117,14 +122,14 @@ return <main className="wrap"><h2><small>Network</small>Verified businesses</h2>
 const LBL={name:'Name',category:'Category',desc:'Description',link:'Widget link'}
 const same=(a,b)=>JSON.stringify(a??'')===JSON.stringify(b??'')
 const show=(k,v)=>['logo','cover'].includes(k)?(v?<Img id={v} className="th"/>:'—'):k==='gallery'?<span>{(v||[]).filter(Boolean).length} photos {(v||[]).filter(Boolean).map((g,i)=><Img key={i} id={g} className="th"/>)}</span>:Array.isArray(v)?<span>{v.length} items: {v.map(i=>i.title||i.label||'').join(', ')}</span>:<span>{String(v||'—')}</span>
-function AppCard({b}){const[d,setD]=useState(undefined);const[busy,run]=useBusy()
+function AppCard({b}){const[d,setD]=useState(undefined);const[busy,run]=useBusy();const pv=usePriv(b.id)
 useEffect(()=>onSnapshot(doc(db,'drafts',b.id),x=>setD(x.exists()?x.data():null),()=>setD(null)),[b.id])
 const x=d?.data||{},old=b.profile||{},ch=[];BASIC.forEach(k=>{if(x[k]!==undefined&&!same(x[k],b[k]))ch.push([LBL[k],b[k],x[k],k])});Object.keys(x.profile||{}).forEach(k=>{if(!same(x.profile[k],old[k]))ch.push([k,old[k],x.profile[k],k])})
 const act=ok=>run(async()=>{let note='';if(!ok){note=prompt('What should they change?')||'';if(!note)return}
-const up={profileStatus:ok?'approved':'rejected',adminNote:note};if(ok){BASIC.forEach(k=>{if(x[k]!==undefined)up[k]=x[k]});if(x.profile)up.profile={...old,...x.profile}}
-await updateDoc(doc(db,'businesses',b.id),up);if(ok)await deleteDoc(doc(db,'drafts',b.id)).catch(()=>{})
-await addDoc(collection(db,'notices'),{uid:b.uid,biz:b.name,email:b.email||'',kind:'reminder',text:ok?'✅ Your profile update was approved and is now live.':'❌ Your profile update needs changes: '+note,qs:[],answers:[],status:'sent',t:serverTimestamp()});toast(ok?'Approved, now live':'Sent back to business')})
-return <div className="card"><div className="row"><Logo b={b} s={44}/><b>{b.name}</b><small>{b.email}</small></div>
+const up={profileStatus:ok?'approved':'rejected'};if(ok){BASIC.forEach(k=>{if(x[k]!==undefined)up[k]=x[k]});if(x.profile)up.profile={...old,...x.profile}}
+await updateDoc(doc(db,'businesses',b.id),up);await setDoc(doc(db,'bizPrivate',b.id),{uid:b.uid,adminNote:ok?'':note},{merge:true});if(ok)await deleteDoc(doc(db,'drafts',b.id)).catch(()=>{})
+await addDoc(collection(db,'notices'),{uid:b.uid,biz:b.name,email:pv.email||b.email||'',kind:'reminder',text:ok?'✅ Your profile update was approved and is now live.':'❌ Your profile update needs changes: '+note,qs:[],answers:[],status:'sent',t:serverTimestamp()});toast(ok?'Approved, now live':'Sent back to business')})
+return <div className="card"><div className="row"><Logo b={b} s={44}/><b>{b.name}</b><small>{pv.email||b.email}</small></div>
 {d===undefined?<Spin/>:ch.length===0?<p style={{margin:'8px 0',color:'#8a87aa'}}>No visible changes in the draft.</p>:<div className="tw"><table><tbody>{ch.map(([l,o,n],i)=><tr key={i}><td><b>{l}</b></td><td style={{whiteSpace:'normal'}}>{show(ch[i][3],o)}</td><td>→</td><td style={{whiteSpace:'normal',color:'var(--l)'}}>{show(ch[i][3],n)}</td></tr>)}</tbody></table></div>}
 <div className="row" style={{marginTop:10}}><button disabled={busy} onClick={()=>act(true)}>✓ Approve</button><button className="s" disabled={busy} onClick={()=>act(false)}>✕ Reject</button><Link className="btn s" to={'/business/'+b.id+'?draft=1'}>👁 Preview</Link><Link className="btn s" to={'/profile/'+b.id}>✏️ Edit</Link></div></div>}
 export function Approvals(){const bs=useCol('businesses').filter(x=>x.profileStatus==='pending')

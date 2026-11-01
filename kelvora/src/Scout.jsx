@@ -1,4 +1,5 @@
 import {useState} from 'react'
+import {WsFlag} from './workspace/state.js'
 import {Link} from 'react-router-dom'
 import {useCol,auth} from './firebase.js'
 import {toast,useBusy} from './Ui.jsx'
@@ -31,9 +32,9 @@ const j=await r.json().catch(()=>({}));if(!r.ok){setCur(null);throw new Error(j.
 return <div><form onSubmit={go} className="card" style={{maxWidth:'none'}}><div className="grid" style={{gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))'}}>
 <input placeholder="Business name" value={f.name} onChange={e=>setF({...f,name:e.target.value})}/><input placeholder="Website link (optional)" value={f.link} onChange={e=>setF({...f,link:e.target.value})}/><input placeholder="City (optional)" value={f.city} onChange={e=>setF({...f,city:e.target.value})}/></div>
 <div className="row" style={{marginTop:10}}><button disabled={busy}>{busy?'Analysing…':'🔍 Analyse business'}</button><small style={{color:'#8a87aa'}}>No link? We search the web for it.</small></div></form>
-{busy&&<div className="card" style={{marginTop:14}}><div className="row"><div className="spin" style={{margin:0,width:22,height:22}}/><span>{s?.step||'Starting…'}</span></div></div>}
-{s?.status==='error'&&<div className="card ord late" style={{marginTop:14}}>⚠️ {s.step}</div>}
-{s?.status==='done'&&<Report s={s} admin={admin}/>}
+{busy&&<WsFlag s="processing"/>}{busy&&<div className="card" style={{marginTop:14}}><div className="row"><div className="spin" style={{margin:0,width:22,height:22}}/><span>{s?.step||'Starting…'}</span></div></div>}
+{s?.status==='error'&&<WsFlag s="error"/>}{s?.status==='error'&&<div className="card ord late" style={{marginTop:14}}>⚠️ {s.step}</div>}
+{s?.status==='done'&&!s.cached&&Date.now()-(s.createdAt?.toMillis?.()||0)<30000&&<WsFlag s="success"/>}{s?.status==='done'&&<Report s={s} admin={admin}/>}
 {L.filter(x=>x.status==='done').length>0&&<><h3 style={{margin:'28px 0 10px'}}>Past reports</h3><div className="grid">{L.filter(x=>x.status==='done').map(x=><div className="card" key={x.id}><b>{x.input.name||x.domain}</b><br/><small>{x.domain} · score {x.score}{admin?' · '+x.email:''}</small><div className="row" style={{marginTop:8}}><button className="s" onClick={()=>{setCur(x.id);scrollTo({top:0,behavior:'smooth'})}}>Open</button></div></div>)}</div></>}</div>}
 
 export const AuditPage=({u})=><main className="wrap"><h2><small>Free tool</small>AI Business Audit</h2>

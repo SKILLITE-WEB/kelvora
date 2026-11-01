@@ -20,10 +20,10 @@ const ring=new THREE.Mesh(new THREE.TorusGeometry(1.45,.022,10,96),glow);ring.ro
 const st={}
 if(i===0){st.b=[0,1,2].map(k=>{const m=new THREE.Mesh(new THREE.CapsuleGeometry(.16,.8,4,10),k%2?glow:soft);m.rotation.z=Math.PI/2;m.position.set(2.1+(k%2?.25:-.1),1.1-k*.6,.2);g.add(m);return m})
 st.d=[0,1,2].map(k=>{const d=new THREE.Mesh(new THREE.SphereGeometry(.07,10,8),glow);d.position.set(1.7+k*.22,-1.2,.3);g.add(d);return d})}
-if(i===1){const base=new THREE.Mesh(new THREE.BoxGeometry(2,.06,.6),soft);base.position.set(2.3,-1.6,.2);g.add(base)
+if(i===1){const base=new THREE.Mesh(new THREE.BoxGeometry(2,.06,.6),soft);base.position.set(2.3,-1.6,.2);g.add(base);st.base=[base]
 st.c=[0,1,2,3,4].map(k=>{const geo=new THREE.BoxGeometry(.28,1,.28);geo.translate(0,.5,0);const m=new THREE.Mesh(geo,glow);m.position.set(1.65+k*.33,-1.57,.2);g.add(m);return m})}
 if(i===2){st.cells=[];for(let r=0;r<3;r++)for(let c=0;c<3;c++){const m=new THREE.Mesh(new THREE.BoxGeometry(.34,.34,.08),new THREE.MeshStandardMaterial({color:0x2a2a48,emissive:color,emissiveIntensity:.15}));m.position.set(1.9+c*.42,.6-r*.42,.2);g.add(m);st.cells.push(m)}}
-return{g,ring,eyes,hands,tip,st,bx:0,by:0}}
+return{g,ring,eyes,hands,tip,st,bx:0,by:0,old:[head,visor,ant,tip,body,core,ring,...eyes,...hands]}}
 
 export default function Scene3D(){const ref=useRef();const L=useRef([]);const[ti,setTi]=useState(0)
 useEffect(()=>{const id=setInterval(()=>setTi(x=>x+1),2200);return()=>clearInterval(id)},[])
@@ -69,4 +69,4 @@ return()=>{cancelAnimationFrame(raf);ro.disconnect();io.disconnect();removeEvent
 scene.traverse(o=>{o.geometry?.dispose?.();const m=o.material;if(m)(Array.isArray(m)?m:[m]).forEach(x=>x.dispose())});renderer.dispose();renderer.domElement.remove()}},[])
 return <div className="s3d" ref={ref} aria-hidden="true">{!OFF()&&ROLES.map(([n,t],i)=><div key={i} className="alabel" ref={e=>{L.current[i]=e}} style={{'--c':'#'+COL[i].toString(16).padStart(6,'0')}}><b>{n}</b><span key={(ti+i)%3}>{t[(ti+i)%3]}</span></div>)}</div>}
 
-export function makeAgent(color,i){const o=makeAgentOld(color,i),R=makeRobot(color);o.g.children.forEach(c=>{c.visible=false});o.g.add(R.g);Object.assign(o,{hands:R.hands,ring:R.ring,eyes:R.eyes,head:R.head,body:R.body});return o}
+export function makeAgent(color,i){const o=makeAgentOld(color,i),R=makeRobot(color);o.old.forEach(c=>{c.visible=false});if(innerWidth<800)Object.values(o.st).flat().forEach(m=>{m.visible=false});o.g.add(R.g);Object.assign(o,{hands:R.hands,ring:R.ring,eyes:R.eyes,head:R.head,body:R.body});return o}

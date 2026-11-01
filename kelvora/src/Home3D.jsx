@@ -1,8 +1,10 @@
+import Journey from './Journey.jsx'
+import {today} from './date.js'
 import {lazy,Suspense,useState,useEffect} from 'react'
 import {Link} from 'react-router-dom'
 import {collection,query,where,onSnapshot} from 'firebase/firestore'
 import {db,useCol,isAdmin} from './firebase.js'
-import {useVerified} from './Verified.jsx'
+import {useVerified} from './hooks.js'
 import {Chat,ensureSupport,supportId} from './Support.jsx'
 import {Spin} from './Ui.jsx'
 import Showcase from './Showcase.jsx'
@@ -13,11 +15,8 @@ const STEPS=[['01','Audit','Our AI reads your public website and finds software 
 
 function Landing({u,Contact,Need,me,hub}){const[pv,setPv]=useState(false)
 return <main>
-<section className="hero3d"><Suspense fallback={null}><Scene/></Suspense>
-<div className="wrap hcopy"><div className="col"><span className="pill rv">● AI audit · AI agents · software · marketing</span>
-<h1 className="rv">Less effort.<br/><span className="grad">More growth.</span></h1>
-<p className="rv">{me?'Welcome back, '+me.name+'. Your agents, orders and Kelvora chat are right below.':'Kelvora takes the manual work out of running a business. Our AI finds the gaps, then our agents, software and creative team close them.'}</p>
-<div className="row rv">{me?<><button onClick={()=>document.getElementById('hubchat')?.scrollIntoView({behavior:'smooth'})}>💬 Open my chat</button><Link className="btn s" to="/agents">🤖 Request a service</Link></>:<><Link className="btn" to="/register">Register your business</Link><Link className="btn s" to="/audit">🔍 Free AI audit</Link></>}<a className="btn s" href={PITCH} target="_blank" rel="noreferrer">▶ Watch our pitch</a></div></div></div></section>
+<Journey me={me}/>
+<div className="hz">
 {hub}
 <div className="mq"><div className="mt">{[0,1].map(k=><span key={k} style={{display:'flex',gap:48}}>{['AI AGENTS','WEB APPS','AUTOMATION','VIDEO EDITING','MOTION GRAPHICS','SOCIAL MEDIA','BRANDING'].map(x=><span key={x}>{x} ✦</span>)}</span>)}</div></div>
 <div className="wrap"><h2><small>How it works</small>How Kelvora works, step by step.</h2>
@@ -30,19 +29,21 @@ return <main>
 <h2><small>Roadmap</small>Where we are going.</h2>
 <div className="card glow"><span className="tag v">Coming soon</span><h3>🤝 Investor and VC network</h3><p>Businesses on Kelvora will be able to see how much they may need to raise and why, which investors could fit, and how to reach out. We will bring this step by step.</p></div>
 <div className="cta"><h2>A platform where businesses grow together.</h2><p style={{color:'#b9b6d6',margin:'0 auto 24px',maxWidth:'55ch'}}>Register, get verified, showcase your profile, and request services in one chat.</p><Link className="btn" to="/register">Get started</Link></div>
-<h2><small>Contact</small>Let's talk about your project.</h2><Need u={u}><Contact u={u}/></Need></div></main>}
+<h2><small>Contact</small>Let's talk about your project.</h2><Need u={u}><Contact u={u}/></Need></div></div></main>}
 
-function AdminStrip(){const o=useCol('orders');const b=useCol('businesses');const td=new Date().toISOString().slice(0,10)
+function AdminStrip(){const o=useCol('orders');const b=useCol('businesses');const td=today()
 const L=[['🧾','Quote requests',o.filter(x=>x.status==='requested').length,'inquiries'],['🚨','Overdue',o.filter(x=>x.due&&x.due<td&&['new','working'].includes(x.status)).length,'orders'],['⏳','To verify',b.filter(x=>!x.verified).length,'clients'],['📝','Profile reviews',b.filter(x=>x.profileStatus==='pending').length,'approvals']]
 return <div className="wrap" style={{paddingTop:14}}><div className="card glow"><div className="row"><b>🛠 Admin</b>{L.map(([i,k,v,t])=><Link key={k} className={'btn s'+(v?' hot':'')} to={'/admin#'+t}>{i} {k}: {v}</Link>)}<Link className="btn" to="/admin">Open panel</Link></div></div></div>}
 
+const HI={'Quotes to approve':['s',7],'Active orders':['a',5],'Waiting for quote':['a',2],'New notifications':['a',3],'Verification':['m',3]}
+const IconHost=lazy(()=>import('./Icons3D.jsx'))
 function Hub({u,b}){const o=useCol('orders',['uid','==',u.uid]);const n=useCol('notices',['uid','==',u.uid]);const ver=useVerified(u);const[tid,setTid]=useState(supportId(u.uid))
 useEffect(()=>{ensureSupport(u).then(setTid).catch(()=>{})},[u.uid])
 const go=()=>document.getElementById('hubchat')?.scrollIntoView({behavior:'smooth',block:'start'})
 const q=o.filter(x=>x.status==='quoted').length,act=o.filter(x=>['new','working'].includes(x.status)).length,rq=o.filter(x=>x.status==='requested').length,nn=n.filter(x=>x.status==='sent').length
 const S=[['💰',q,'Quotes to approve',go],['🔧',act,'Active orders','/dashboard'],['🧾',rq,'Waiting for quote',go],['🔔',nn,'New notifications','/dashboard'],[ver?'✅':'⏳',ver?'Verified':'In review','Verification','/dashboard']]
 return <div className="wrap" id="hub" style={{paddingTop:30}}><h2><small>Your workspace</small>{b.name}</h2>
-<div className="hubs">{S.map(([i,v,l,t])=>{const c=<><small>{i} {l}</small><h2 style={{margin:0}}>{v}</h2></>,hot=typeof v==='number'&&v>0&&l!=='Active orders';return typeof t==='string'?<Link key={l} to={t} className={'card alc'+(hot?' glow':'')}>{c}</Link>:<button key={l} onClick={t} className={'card alc'+(hot?' glow':'')}>{c}</button>})}</div>
+<Suspense fallback={null}><IconHost/></Suspense><div className="hubs">{S.map(([i,v,l,t])=>{const c=<><div className="ic3" data-t={(HI[l]||['s',0])[0]} data-i={(HI[l]||['s',0])[1]} data-k={'h-'+l}><span className="ice">{i}</span></div><small>{l}</small><h2 style={{margin:0}}>{v}</h2></>,hot=typeof v==='number'&&v>0&&l!=='Active orders';return typeof t==='string'?<Link key={l} to={t} className={'card alc'+(hot?' glow':'')}>{c}</Link>:<button key={l} onClick={t} className={'card alc'+(hot?' glow':'')}>{c}</button>})}</div>
 <div className="card" id="hubchat" style={{marginTop:14}}><div className="row"><b>💬 Kelvora Support</b><span className="tag">Our team replies here</span></div><p style={{margin:'6px 0 10px',fontSize:14,color:'#b9b6d6'}}>Ask anything, request a service, approve quotes and track payments, all in this one chat.</p>
 <Chat tid={tid} u={u} th={{type:'support',uid:u.uid,email:u.email,id:tid}}/></div>
 <h3 style={{margin:'24px 0 10px'}}>Quick actions</h3>
