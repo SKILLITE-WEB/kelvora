@@ -65,6 +65,16 @@ sweep([[[HW-.06,.012],[HW-.14,.012]],[[-HW+.14,.012],[-HW+.06,.012]]],lineM).vis
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mk({color:0xffffff,map:(()=>{const f=tex(128,128,(x,w,h)=>{x.fillStyle='#e6e1d7';x.fillRect(0,0,w,h);x.strokeStyle='#dcd6ca';x.lineWidth=2;x.strokeRect(0,0,w,h)});f.t.wrapS=f.t.wrapT=THREE.RepeatWrapping;f.t.repeat.set(233,233);return f.t})(),metalness:0,roughness:.9}));geos.push(ground.geometry);ground.rotation.x=-PI/2;ground.position.set(0,-.05,100);scene.add(ground)
 const grid=new THREE.GridHelper(500,250,0xcbc5b8,0xcbc5b8);grid.material.transparent=true;grid.material.opacity=.55;grid.position.set(0,-.71,100);grid.visible=false;scene.add(grid);geos.push(grid.geometry);mats.push(grid.material)
 const dm=new THREE.Object3D()
+/*shell*/{const WL=mk({color:0xf1eee7,metalness:0,roughness:.9}),BS=mk({color:0xb7ae9e,metalness:0,roughness:.8}),CE=mk({color:0xf8f6f1,metalness:0,roughness:1})
+ const X0=-30,X1=32,Z0=-24,Z1=228,BH=6.2,cx=(X0+X1)/2,cz=(Z0+Z1)/2,BW=X1-X0,BD=Z1-Z0
+ bx(BW,BH,.3,WL,cx,BH/2,Z0,scene);bx(BW,BH,.3,WL,cx,BH/2,Z1,scene);bx(.3,BH,BD,WL,X0,BH/2,cz,scene);bx(.3,BH,BD,WL,X1,BH/2,cz,scene)
+ bx(BW,1.1,.34,BS,cx,.55,Z0,scene);bx(BW,1.1,.34,BS,cx,.55,Z1,scene);bx(.34,1.1,BD,BS,X0,.55,cz,scene);bx(.34,1.1,BD,BS,X1,.55,cz,scene)
+ const cg=new THREE.PlaneGeometry(BW,BD);geos.push(cg);const ce=new THREE.Mesh(cg,CE);ce.rotation.x=PI/2;ce.position.set(cx,BH,cz);scene.add(ce)
+ const pg=new THREE.BoxGeometry(2.4,.05,.9);geos.push(pg);const pm=new THREE.MeshBasicMaterial({color:0xfff7e2});mats.push(pm)
+ const cols=[-22,-8,6,20],rows=[];for(let z=0;z<=224;z+=9)rows.push(z)
+ const lp=new THREE.InstancedMesh(pg,pm,cols.length*rows.length);let n=0
+ cols.forEach(x=>rows.forEach(z=>{dm.position.set(x,BH-.04,z);dm.rotation.set(0,0,0);dm.scale.set(1,1,1);dm.updateMatrix();lp.setMatrixAt(n++,dm.matrix)}))
+ lp.frustumCulled=false;scene.add(lp)}
 // bench-props
 {const BM=mk({color:0xb99b74,metalness:0,roughness:.6}),BL=mk({color:0x2b3040,metalness:.3,roughness:.5})
  for(let i=0;i<4;i++){const f=fr(U[i]+(U[i+1]-U[i])*.5);for(const sd of[1,-1]){const G=new THREE.Group();G.position.copy(f.p).addScaledVector(f.l,sd*(HW+1.8));G.rotation.y=f.yaw;scene.add(G)
