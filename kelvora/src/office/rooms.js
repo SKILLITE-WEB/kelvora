@@ -43,10 +43,14 @@ export function buildRooms({scene,fr,U,slots,mob}){
   const sp=new THREE.Sprite(spm);sp.scale.set(2.2,.55,1);sp.position.set(-sd*4.0,2.55,0);G.add(sp)
   // ceiling with flat light panels
   const cl_=mm({color:0xf7f5f0,transparent:true,opacity:.55,roughness:.9,depthWrite:false}),pan=mm({color:0xffffff,emissive:0xfff4dc,emissiveIntensity:.6,roughness:.5})
-  add(3.9,.04,6.6,cl_,3.35,3.2,0,.01);[-2,0,2].forEach(a=>add(1.4,.03,.5,pan,3.35,3.17,a,.01))
+  
   // small round meeting table
   const tb=mm({color:0xb99b74,roughness:.6}),ch=mm({color:0x6b7280,roughness:.8})
   add(.7,.04,.7,tb,4.3,.62,2.4,.3);add(.06,.6,.06,DK(),4.3,.3,2.4,.01);add(.34,.05,.34,ch,4.3,.4,1.9,.05);add(.34,.05,.34,ch,4.3,.4,2.9,.05)
+  // bookshelf + sofa
+  const wd_=mm({color:0x9a7b55,roughness:.65}),sf_=mm({color:0x7d8b97,roughness:.9}),bk=[mm({color:0x4f8f3a,roughness:.8}),mm({color:0xc9a24a,roughness:.8}),mm({color:0x5f7fa8,roughness:.8})]
+  add(.4,1.7,1.0,wd_,5.0,.85,1.3,.02);[.45,.95,1.4].forEach((y,j)=>{add(.34,.04,.96,wd_,4.97,y,1.3,.005);add(.26,.28,.8,bk[j],4.97,y+.16,1.3,.02)})
+  add(.7,.3,1.5,sf_,4.55,.15,-1.3,.08);add(.2,.4,1.5,sf_,4.85,.4,-1.3,.07)
   // desks + agent slots (agent faces the road)
   const f=V(-F.r.x*sd,0,-F.r.z*sd),fy=atan2(f.x,f.z),S={}
   const dg=new THREE.CylinderGeometry(.028,.032,.025,18);extra.push(dg)
