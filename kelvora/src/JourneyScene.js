@@ -22,7 +22,7 @@ let renderer
 try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'})}catch{return null}
 const geos=[],mats=[],texs=[]
 const mob=()=>host.clientWidth<760
-let dpr=min(devicePixelRatio||1,mob()?1.5:2),lost=false
+/*q-low*/const LOWQ=(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4;let dpr=min(devicePixelRatio||1,LOWQ?1:mob()?1.5:2),lost=false
 renderer.setPixelRatio(dpr);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.92
 host.appendChild(renderer.domElement)
 const onLost=e=>{e.preventDefault();lost=true;if(onFail)onFail()}

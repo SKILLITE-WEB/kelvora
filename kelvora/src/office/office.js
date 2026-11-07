@@ -78,7 +78,7 @@ export function createOffice(c){
   else if(st==='settle'){liftV*=exp(-dt*3.5);mood*=exp(-dt*3);hv=0;if(liftV<.004){liftV=0;finish()}else{ov={lift:liftV,tuck:.14*liftV/1.5};lift=liftV}}
   else{mood=0;hv=0}
   if(st==='ready'){if(info.s.act!==gAct){gAct=info.s.act;if(gAct>=0)gT=clk}
-   if(!ov&&gAct>=0&&clk-gT<4.2){const r=rooms[gAct],e=clk-gT,arms=[null,null];if(e<2.4)arms[1]=[-.42+.06*sin(clk*10),1.5+.05*sin(clk*7.3),.18,ss(.1,.5,e)*(1-ss(1.9,2.4,e))];ov={arms,out:{look:r.shared,lookW:.9*ss(.1,.5,e)*(1-ss(3.3,4.2,e))}}}}
+   if(!ov&&gAct>=0&&clk-gT<4.2){const r=rooms[gAct],e=clk-gT,arms=[null,null];/*g-point*/if(e<2.4&&gAct===0)arms[1]=[-.42+.06*sin(clk*10),1.5+.05*sin(clk*7.3),.18,ss(.1,.5,e)*(1-ss(1.9,2.4,e))];if(e<2.4&&gAct>0)arms[0]=[.45,1.2,.5,ss(.1,.5,e)*(1-ss(1.9,2.4,e))];ov={arms,out:{look:r.shared,lookW:.9*ss(.1,.5,e)*(1-ss(3.3,4.2,e))}}}}
   if(!ov&&st==='ready'&&info.s.act<0){let b=null,bd=5.5
    agents.forEach(a=>{if(!a.isReady()||!a.root.visible)return;const d=a.S.pos.distanceTo(root.position);if(d<bd){bd=d;b=a}})
    if(b)ov={out:{look:b.head(),lookW:ss(5.5,3.6,bd)*.85}}}

@@ -23,7 +23,7 @@ export default function Workspace({kind='control'}){
   if(off){setFb(true);return}
   let r;try{r=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'})}catch{setFb(true);return}
   const mob=innerWidth<800,rm=matchMedia('(prefers-reduced-motion:reduce)').matches
-  let dpr=Math.min(devicePixelRatio||1,mob?1.25:1.75);r.setPixelRatio(dpr);r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=.92
+  /*q-low*/let dpr=Math.min(devicePixelRatio||1,((navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4)?1:mob?1.25:1.75);r.setPixelRatio(dpr);r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=.92
   el.appendChild(r.domElement);document.body.classList.add('wsp')
   const BG=0xece8e0,scene=new THREE.Scene();scene.background=new THREE.Color(BG);scene.fog=new THREE.Fog(BG,9,22)
   const cam=new THREE.PerspectiveCamera(32,1,.1,60)

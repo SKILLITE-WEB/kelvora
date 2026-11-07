@@ -20,8 +20,8 @@ export const AGENTS=[
 {id:'a6',room:3,slot:'C',accent:0x38d4ee,role:'editor',seed:79},
 {id:'a7',room:4,slot:'A',accent:0xffc24a,role:'host',seed:83,primary:1},
 {id:'a8',room:4,slot:'B',accent:0x8a74ff,role:'helper',seed:97}]
-const WT={work:4,read:2,note:1.4,review:1.2,adjust:1,check:1,think:.9,stretch:.5,organize:.9,sat:.4,tilt:.7,coffee:.6,collab:1.7,deliver:1.5,greet:7}
-const ROLE={greeter:{greet:2,tilt:2,work:.6},auditor:{read:2,check:2,review:1.5},reviewer:{note:2,read:1.5,review:2.5},builder:{adjust:2.2,work:1.4},operator:{deliver:2,check:1.4},designer:{organize:2,sat:1.5},editor:{note:1.6,think:1.3},host:{coffee:2,organize:1.4,tilt:1.4},helper:{deliver:2,tilt:1.4}}
+const WT={work:4,read:2,note:1.4,review:1.2,adjust:1,check:1,think:.9,stretch:.5,organize:.9,sat:.4,tilt:.7,coffee:.6,collab:1.7,deliver:1.5,greet:7,call:.7}
+const ROLE={greeter:{greet:2,tilt:2,work:.6},auditor:{read:2,check:2,review:1.5},reviewer:{note:2,read:1.5,review:2.5},builder:{adjust:2.2,work:1.4},operator:{deliver:2,check:1.4},designer:{organize:2,sat:1.5},editor:{note:1.6,think:1.3},host:{coffee:2,organize:1.4,tilt:1.4,call:1.6},helper:{deliver:2,tilt:1.4}}
 const AM={},AG={}
 const accentMat=c=>AM[c]||(AM[c]=new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.5,roughness:.35,metalness:.2}))
 const white=()=>AM.w||(AM.w=new THREE.MeshStandardMaterial({color:0xf4f6ff,roughness:.6}))
@@ -58,6 +58,7 @@ export function makeAgent(def,room,scene){
  const rest=w=>{const q=sl.keys;H(0,V(q.x+sl.h.x*.12,q.y,q.z+sl.h.z*.12),w);H(1,V(q.x-sl.h.x*.12,q.y,q.z-sl.h.z*.12),w)}
  const ACT={
   work:()=>[T_(rr(4,8),(u,t)=>{typeH(t);c.look=sl.screenP;c.lean=.03})],
+  /*a-call*/call:()=>[T_(rr(3,4.5),(u,t)=>{H(1,rig.head.localToWorld(V(-.3,-.04,.06)),ss(0,.25,u)*(1-ss(.85,1,u)));c.tilt=.1;c.look=lp(0,1.3,2.5);c.nod=.03*sin(t*3)})],
   review:()=>[T_(rr(3,4.5),(u,t)=>{const n=sl.notes;c.look=u<.6?n:sl.screenP;c.lean=.06;H(0,V(n.x+sl.h.x*.1,n.y+.012,n.z+sl.h.z*.1),.8);c.nod=.07*sin(u*PI*4)*u})],
   read:()=>[T_(rr(2.6,4),u=>{c.look=u<.5?sl.screenP:sl.notes;c.lean=.05;rest(.7)})],
   check:()=>{const p=P(),tg=p?p.sl.screenP:room.shared;return[T_(rr(2.4,3.4),u=>{c.look=u<.35?sl.screenP:tg;c.lean=.04;rest(.6)})]},
