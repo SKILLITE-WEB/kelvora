@@ -11,7 +11,7 @@ export const K=.6,STR=.5,FOOT=.07
 const gait=ph=>{ph=((ph%1)+1)%1;if(ph<.5)return{x:STR/2-STR*(ph/.5),y:0};const t=(ph-.5)/.5;return{x:-STR/2+STR*(1-cos(PI*t))/2,y:.09*sin(PI*t)}}
 // stable identities + deterministic assignments (room index = journey stop). primary = kept on mobile.
 export const AGENTS=[
-{id:'a0',room:0,slot:'C',accent:0xb9f45c,role:'greeter',seed:11,primary:1},
+{id:'a0',room:0,slot:'A',accent:0xb9f45c,role:'greeter',seed:11,primary:1},
 {id:'a1',room:1,slot:'A',accent:0x38d4ee,role:'auditor',seed:23,primary:1},
 {id:'a2',room:1,slot:'C',accent:0xffc24a,role:'reviewer',seed:37},
 {id:'a3',room:2,slot:'B',accent:0x8a74ff,role:'builder',seed:41},

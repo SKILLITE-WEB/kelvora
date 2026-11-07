@@ -89,7 +89,7 @@ export function createOffice(c){
    if(f.t0>=0){flyAgent(f);if(!f.done)wv=max(wv,f.u)}})
   corr.set(all?1:wv+.004)
   rooms.forEach(r=>{r.setA(r.t0==null?.1:ss(0,1.6,clk-r.t0));const cp=r.cup;if(cp&&!cp.holder){cp.mesh.position.lerp(cp.target,1-exp(-dt*8));cp.mesh.rotation.x*=.85}})
-  agents.forEach(a=>{if(a.flight||!a.isReady())return;const near=a.S.pos.distanceTo(camP)<(M?34:46);a.setVisible(near);if(near)a.update(dt,clk)})
+  agents.forEach(a=>{if(a.flight||!a.isReady())return;const near=a.S.pos.distanceTo(camP)<(M?20:28);a.setVisible(near);if(near)a.update(dt,clk)})
   pv.rotation.x=-1.35*hv;hgm.emissiveIntensity=.15+2.2*hv
   hemi.intensity=.9*(1-.45*mood);sun.intensity=2.1*(1-.4*mood)
   const on=mood>.004;fx.visible=on
