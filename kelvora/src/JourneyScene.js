@@ -67,7 +67,7 @@ const grid=new THREE.GridHelper(500,250,0xcbc5b8,0xcbc5b8);grid.material.transpa
 const dm=new THREE.Object3D()
 const lampN=mob()?18:32
 const poleG=new THREE.CylinderGeometry(.03,.03,1.5,8),headG=new THREE.SphereGeometry(.09,10,8);geos.push(poleG,headG)
-const poles=new THREE.InstancedMesh(poleG,DK,lampN),heads=new THREE.InstancedMesh(headG,lineM,lampN);scene.add(poles,heads)
+const poles=new THREE.InstancedMesh(poleG,DK,lampN),heads=new THREE.InstancedMesh(headG,lineM,lampN);scene.add(poles,heads);poles.visible=false;heads.visible=false
 for(let i=0;i<lampN;i++){const f=fr(.03+.95*i/(lampN-1));dm.position.copy(f.p).addScaledVector(f.l,HW+.35);dm.position.y+=.75;dm.updateMatrix();poles.setMatrixAt(i,dm.matrix);dm.position.y+=.8;dm.updateMatrix();heads.setMatrixAt(i,dm.matrix)}
 const NB=0,bg=new THREE.BoxGeometry(1,1,1);geos.push(bg)
 const boxes=new THREE.InstancedMesh(bg,mk({color:0x151a26,metalness:.35,roughness:.6,envMapIntensity:.5}),NB);scene.add(boxes)

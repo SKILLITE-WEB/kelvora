@@ -27,18 +27,20 @@ export function buildRooms({scene,fr,U,slots,mob}){
   // architecture: open-sided floor, low back wall, doorway pillars
   add(3.9,.6,6.6,mm({color:0xd9d3c7,roughness:.75}),3.35,-.32,0,.06)
   add(.06,.02,6.6,acc,1.43,-.01,0,.005)
-  add(.12,.85,6.6,mm({color:0xf4f1ea,roughness:.6}),5.25,.4,0)
-  add(.14,.04,6.6,acc,5.25,.84,0,.01)
-  ;[1.62,-1.62].forEach(l=>{add(.14,1.7,.14,DK(),l,.83,-2.4);add(.04,1.4,.03,acc,l,.85,-2.315,.01)})
+  add(.12,3,6.6,mm({color:0xf4f1ea,roughness:.6}),5.25,1.2,0)
+  add(.14,.05,6.6,acc,5.25,2.72,0,.01);add(.14,.05,6.6,acc,5.25,.06,0,.01)
+  ;const gl=mm({color:0xcfe6ee,transparent:true,opacity:.2,roughness:.1,depthWrite:false}),pot=mm({color:0x8a6a4a,roughness:.8}),leaf=mm({color:0x4f8f3a,roughness:.9})
+  ;[3.3,-3.3].forEach(a=>{add(3.7,2.3,.04,gl,3.35,1.15,a,.01);add(3.7,.05,.06,acc,3.35,2.32,a,.01)})
+  ;[[4.85,2.9],[1.9,-3.0]].forEach(([l,a])=>{add(.3,.28,.3,pot,l,.14,a,.04);add(.42,.55,.42,leaf,l,.55,a,.16)})
   // shared display on a stand
-  add(.05,.5,.9,scr,4.95,.62,0,.012);add(.05,.36,.05,DK(),4.95,.18,0);add(.03,.54,.94,acc,5.0,.62,0,.01)
+  add(.04,.8,1.5,scr,5.16,1.45,0,.012);add(.03,.84,1.54,acc,5.2,1.45,0,.01)
   // room label (existing journey stop names only)
   const cv=document.createElement('canvas');cv.width=512;cv.height=128;const x=cv.getContext('2d')
   x.fillStyle='rgba(9,11,17,.85)';x.fillRect(0,0,512,128);x.strokeStyle=hex(col);x.lineWidth=6;x.strokeRect(3,3,506,122)
   x.fillStyle='#eef0f7';x.font='700 58px Sora,Inter,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(NAMES[i],256,68)
   const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;texs.push(tx)
   const spm=new THREE.SpriteMaterial({map:tx,transparent:true,opacity:.3,depthWrite:false});mats.push(spm)
-  const sp=new THREE.Sprite(spm);sp.scale.set(2.2,.55,1);sp.position.set(-sd*4.6,1.6,0);G.add(sp)
+  const sp=new THREE.Sprite(spm);sp.scale.set(2.2,.55,1);sp.position.set(-sd*4.0,2.55,0);G.add(sp)
   // desks + agent slots (agent faces the road)
   const f=V(-F.r.x*sd,0,-F.r.z*sd),fy=atan2(f.x,f.z),S={}
   const dg=new THREE.CylinderGeometry(.028,.032,.025,18);extra.push(dg)
@@ -57,7 +59,7 @@ export function buildRooms({scene,fr,U,slots,mob}){
    const cm=new THREE.Mesh(cg,SH()),home=at(4.54,-2.62,.43);cm.position.copy(home);scene.add(cm)
    cup={mesh:cm,off:V(0,-.04,0),home,target:home.clone(),holder:null,busy:null,tilt:0}
    counterStand=at(4.3,-2.62)}
-  const room={i,G,F,sd,name:NAMES[i],slots:S,cup,counterStand,shared:at(4.95,0,.62),signPos:at(4.6,0,1.6),members:[],t0:null,
+  const room={i,G,F,sd,name:NAMES[i],slots:S,cup,counterStand,shared:at(5.1,0,1.45),signPos:at(4.6,0,2.5),members:[],t0:null,
    setA(a){acc.emissiveIntensity=.1+1.5*a;scr.emissiveIntensity=.08+.9*a;spm.opacity=.3+.7*a}}
   room.setA(.1);return room})
  // corridor floor lights: the old road becomes an office walkway that lights up as agents pass
