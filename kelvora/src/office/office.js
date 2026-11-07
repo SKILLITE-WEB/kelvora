@@ -41,7 +41,7 @@ export function createOffice(c){
  const pm=new THREE.PointsMaterial({color:0x9ff0ff,size:.05,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending}),pts=new THREE.Points(pg,pm);pts.frustumCulled=false;fx.add(pts)
  const pl=new THREE.PointLight(0x38d4ee,0,9);scene.add(pl)
  // ---- state model: play(greeting→wave→ascent→deploy→landing) | settle (fast-forward) | ready (exploration)
- let st='play',T=0,clk=0,mood=0,liftV=0,curLift=0,hv=0,phase=''
+ let st='play',T=0,clk=0,mood=0,liftV=0,curLift=0,hv=0,phase='',gAct=-2,gT=-9
  const setPhase=p=>{if(p!==phase){phase=p;onPhase&&onPhase(p)}}
  const placeAll=()=>{fls.forEach(f=>{f.done=true});agents.forEach(a=>{a.flight=null;a.placeHome()});rooms.forEach(r=>{r.t0=-99});corr.set(1)}
  const finish=()=>{st='ready';mood=0;hv=0;try{sessionStorage.setItem('kv_open','1')}catch{}setPhase('ready')}
@@ -77,6 +77,8 @@ export function createOffice(c){
   if(st==='play'){ov=playPose(info);lift=ov.lift}
   else if(st==='settle'){liftV*=exp(-dt*3.5);mood*=exp(-dt*3);hv=0;if(liftV<.004){liftV=0;finish()}else{ov={lift:liftV,tuck:.14*liftV/1.5};lift=liftV}}
   else{mood=0;hv=0}
+  if(st==='ready'){if(info.s.act!==gAct){gAct=info.s.act;if(gAct>=0)gT=clk}
+   if(!ov&&gAct>=0&&clk-gT<4.2){const r=rooms[gAct],e=clk-gT,arms=[null,null];if(e<2.4)arms[1]=[-.42+.06*sin(clk*10),1.5+.05*sin(clk*7.3),.18,ss(.1,.5,e)*(1-ss(1.9,2.4,e))];ov={arms,out:{look:r.shared,lookW:.9*ss(.1,.5,e)*(1-ss(3.3,4.2,e))}}}}
   if(!ov&&st==='ready'&&info.s.act<0){let b=null,bd=5.5
    agents.forEach(a=>{if(!a.isReady()||!a.root.visible)return;const d=a.S.pos.distanceTo(root.position);if(d<bd){bd=d;b=a}})
    if(b)ov={out:{look:b.head(),lookW:ss(5.5,3.6,bd)*.85}}}
