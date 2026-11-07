@@ -2,6 +2,7 @@ import {useEffect,useRef,useState} from 'react'
 import {createPortal} from 'react-dom'
 import {Link} from 'react-router-dom'
 import {stationP} from './journeyTL.js'
+import bus from './sceneBus.js'
 const ST=[
 {k:'Kelvora Infotech',n:'Welcome',t:'Less effort. More growth.',d:'Kelvora takes the manual work out of running a business. Our AI finds the gaps, then our agents, software and creative team close them.',c:[['Register your business','/register'],['Free AI audit','/audit',1]]},
 {k:'01 · Audit',n:'Audit',t:'AI finds the gaps in a minute.',d:'Enter a business name or website. Our AI reads the public site and checks software and marketing gaps: chatbot, booking, payments, SEO and social.',c:[['Try the free audit','/audit']]},
@@ -17,7 +18,7 @@ useEffect(()=>{
  try{off=localStorage.getItem('kv_3d')==='off'}catch{}
  if(off){setMode('fb');return}
  const rm=matchMedia('(prefers-reduced-motion:reduce)').matches
- import('./JourneyScene.js').then(m=>{
+ Promise.resolve().then(()=>{
   if(dead)return
   const rect=()=>root.current.getBoundingClientRect()
   const getP=()=>{const r=rect(),span=Math.max(1,r.height-innerHeight),p=-r.top/span
@@ -27,18 +28,18 @@ useEffect(()=>{
   const onStation=i=>{if(i>=0&&st.current)st.current.dataset.side=i%2?'r':'l'
    pan.current.forEach((e,k)=>{if(e)e.classList.toggle('on',k===i)})
    nav.current.forEach((e,k)=>{if(!e)return;if(k===i)e.setAttribute('aria-current','step');else e.removeAttribute('aria-current')})}
-  j=m.createJourney(host.current,{getP,visible:()=>true,onStation,onPhase:setPh,onFail:()=>{document.body.classList.remove('home3d');setMode('fb')},reduced:rm})
+  j=bus.attach({getP,onStation,onPhase:setPh,onMode:md=>{document.body.classList.toggle('home3d',md==='3d');setMode(md)}})
   jr.current=j
-  if(j)document.body.classList.add('home3d')
-  setMode(j?'3d':'fb')
+  
+  
  }).catch(()=>setMode('fb'))
- return()=>{dead=true;jr.current=null;document.body.classList.remove('home3d');if(j)j.dispose()}
+ return()=>{dead=true;jr.current=null;document.body.classList.remove('home3d');if(j)j.detach()}
 },[])
 const go=i=>{const el=root.current,top=el.getBoundingClientRect().top+scrollY,span=el.offsetHeight-innerHeight
  scrollTo({top:top+stationP(i)*span,behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'})}
 const S=ST.map((s,i)=>i===0&&me?{...s,d:'Welcome back, '+me.name+'. Your agents, orders and Kelvora chat are right below.',c:[['Request a service','/agents'],['Dashboard','/dashboard',1]]}:s)
 return <>
-{createPortal(<div className="jny-fx" ref={host} aria-hidden="true"/>,document.body)}
+
 <div className={'jny'+(mode==='fb'?' jny-fb':'')} ref={root}><div className="jny-st" ref={st} data-side="l">
 <a className="jny-skip" href="#jny-end">Skip the journey</a>
 <nav className="jny-nav" aria-label="Journey stops">{S.map((s,i)=><button key={i} type="button" className="s" ref={e=>{nav.current[i]=e}} onClick={()=>go(i)}><b>{i+1}</b><span>{s.n}</span></button>)}</nav>

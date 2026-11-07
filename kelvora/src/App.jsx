@@ -1,4 +1,5 @@
 import Nav from './Nav.jsx'
+import SceneHost from './SceneHost.jsx'
 import {wsKind} from './workspace/state.js'
 import {lazy as _lz,Suspense as _Su} from 'react'
 const _IH=_lz(()=>import('./Icons3D.jsx'))
@@ -79,7 +80,7 @@ return <main className="wrap"><h2><small>Join</small>Register your business</h2>
 const SK={"/network":"network","/audit":"audit","/store":"growth","/portfolio":"computer","/register":"chat","/agents":"build","/dashboard":"chat","/admin":"servers"}
 function Page({children}){const{pathname}=useLocation();useEffect(()=>{scrollTo({top:0})},[pathname]);return <div key={pathname} className="pg">{['/dashboard','/admin'].includes(pathname)&&<_Su fallback={null}><_IH/></_Su>}{wsKind(pathname)&&<_Su fallback={null}><WS kind={wsKind(pathname)}/></_Su>}{children}</div>}
 export default function App(){const u=useUser();const[w3,setW3]=useState(()=>{try{return localStorage.getItem('kv_3d')!=='off'}catch{return true}})
-return <><div className="bg"><i/><i/><i/></div><World on={w3}/><Toasts/><Intro/>
+return <><div className="bg"><i/><i/><i/></div><World on={w3}/><SceneHost/><Toasts/><Intro/>
 <Nav u={u}/>
 <Page><_Su fallback={<Spin/>}><Routes><Route path="/" element={<HomeRoot u={u} Contact={Contact} Need={Need}/>}/><Route path="/portfolio" element={<Portfolio/>}/><Route path="/store" element={<Store u={u}/>}/>
 <Route path="/register" element={<Register u={u}/>}/><Route path="/dashboard" element={<Need u={u}><div className="wrap"><Notices u={u}/></div><Dash u={u} Threads={Threads}/></Need>}/>
