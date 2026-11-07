@@ -20,7 +20,7 @@ export const AGENTS=[
 {id:'a6',room:3,slot:'C',accent:0x38d4ee,role:'editor',seed:79},
 {id:'a7',room:4,slot:'A',accent:0xffc24a,role:'host',seed:83,primary:1},
 {id:'a8',room:4,slot:'B',accent:0x8a74ff,role:'helper',seed:97}]
-const WT={work:4,read:2,note:1.4,review:1.2,adjust:1,check:1,think:.9,stretch:.5,organize:.9,sat:.4,tilt:.7,coffee:.6,collab:1.2,deliver:.8,greet:7}
+const WT={work:4,read:2,note:1.4,review:1.2,adjust:1,check:1,think:.9,stretch:.5,organize:.9,sat:.4,tilt:.7,coffee:.6,collab:1.7,deliver:1.5,greet:7}
 const ROLE={greeter:{greet:2,tilt:2,work:.6},auditor:{read:2,check:2,review:1.5},reviewer:{note:2,read:1.5,review:2.5},builder:{adjust:2.2,work:1.4},operator:{deliver:2,check:1.4},designer:{organize:2,sat:1.5},editor:{note:1.6,think:1.3},host:{coffee:2,organize:1.4,tilt:1.4},helper:{deliver:2,tilt:1.4}}
 const AM={},AG={}
 const accentMat=c=>AM[c]||(AM[c]=new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.5,roughness:.35,metalness:.2}))
@@ -100,7 +100,7 @@ export function makeAgent(def,room,scene){
  const can=k=>{const p=P(),f=A.focus
   if(k==='coffee')return def.slot!=='B'&&!!room.cup&&!room.cup.holder&&!room.cup.busy&&time-lastCoffee>45&&!othersWalking()
   if(k==='collab')return !!p&&!p.isBusy()&&!p.hasListen()&&time-lastCollab>28&&p.S.pos.distanceTo(S.pos)<4.8
-  if(k==='deliver')return !!p&&!p.isBusy()&&!hold[0]&&time-lastDeliver>40&&p.S.pos.distanceTo(S.pos)<3.6&&!othersWalking()
+  if(k==='deliver')return !!p&&!p.isBusy()&&!hold[0]&&time-lastDeliver>24&&p.S.pos.distanceTo(S.pos)<4.4&&!othersWalking()
   if(k==='greet')return !!f&&f.on&&f.pos.distanceTo(S.pos)<3.8&&time-lastGreet>25
   return true}
  const pick=()=>{endFn&&endFn();endFn=null
