@@ -56,7 +56,7 @@ const sweep=(segs,m)=>{const pos=[],idx=[];segs.forEach(s=>{const base=pos.lengt
  for(let i=0;i<N;i++){const a=base+i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2)}})
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();geos.push(g);const o=new THREE.Mesh(g,m);scene.add(o);return o}
 const roadM=mk({color:0xc4beb2,metalness:0,roughness:.85}),curbM=mk({color:0x9d978b,metalness:0,roughness:.8})
-const lineM=new THREE.MeshBasicMaterial({color:ACC,side:THREE.DoubleSide});mats.push(lineM)
+const lineM=new THREE.MeshBasicMaterial({color:0xb7b0a2,side:THREE.DoubleSide});mats.push(lineM)
 sweep([[[HW,0],[-HW,0]]],roadM)
 sweep([[[HW,0],[HW-.04,-.3]],[[-HW+.04,-.3],[-HW,0]]],curbM)
 sweep([[[HW-.06,.012],[HW-.14,.012]],[[-HW+.14,.012],[-HW+.06,.012]]],lineM)

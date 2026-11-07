@@ -41,6 +41,12 @@ export function buildRooms({scene,fr,U,slots,mob}){
   const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;texs.push(tx)
   const spm=new THREE.SpriteMaterial({map:tx,transparent:true,opacity:.3,depthWrite:false});mats.push(spm)
   const sp=new THREE.Sprite(spm);sp.scale.set(2.2,.55,1);sp.position.set(-sd*4.0,2.55,0);G.add(sp)
+  // ceiling with flat light panels
+  const cl_=mm({color:0xf7f5f0,transparent:true,opacity:.55,roughness:.9,depthWrite:false}),pan=mm({color:0xffffff,emissive:0xfff4dc,emissiveIntensity:.6,roughness:.5})
+  add(3.9,.04,6.6,cl_,3.35,3.2,0,.01);[-2,0,2].forEach(a=>add(1.4,.03,.5,pan,3.35,3.17,a,.01))
+  // small round meeting table
+  const tb=mm({color:0xb99b74,roughness:.6}),ch=mm({color:0x6b7280,roughness:.8})
+  add(.7,.04,.7,tb,4.3,.62,2.4,.3);add(.06,.6,.06,DK(),4.3,.3,2.4,.01);add(.34,.05,.34,ch,4.3,.4,1.9,.05);add(.34,.05,.34,ch,4.3,.4,2.9,.05)
   // desks + agent slots (agent faces the road)
   const f=V(-F.r.x*sd,0,-F.r.z*sd),fy=atan2(f.x,f.z),S={}
   const dg=new THREE.CylinderGeometry(.028,.032,.025,18);extra.push(dg)
