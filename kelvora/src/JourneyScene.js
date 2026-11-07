@@ -65,6 +65,10 @@ sweep([[[HW-.06,.012],[HW-.14,.012]],[[-HW+.14,.012],[-HW+.06,.012]]],lineM).vis
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mk({color:0xffffff,map:(()=>{const f=tex(128,128,(x,w,h)=>{x.fillStyle='#e6e1d7';x.fillRect(0,0,w,h);x.strokeStyle='#dcd6ca';x.lineWidth=2;x.strokeRect(0,0,w,h)});f.t.wrapS=f.t.wrapT=THREE.RepeatWrapping;f.t.repeat.set(233,233);return f.t})(),metalness:0,roughness:.9}));geos.push(ground.geometry);ground.rotation.x=-PI/2;ground.position.set(0,-.05,100);scene.add(ground)
 const grid=new THREE.GridHelper(500,250,0xcbc5b8,0xcbc5b8);grid.material.transparent=true;grid.material.opacity=.55;grid.position.set(0,-.71,100);grid.visible=false;scene.add(grid);geos.push(grid.geometry);mats.push(grid.material)
 const dm=new THREE.Object3D()
+// bench-props
+{const BM=mk({color:0xb99b74,metalness:0,roughness:.6}),BL=mk({color:0x2b3040,metalness:.3,roughness:.5})
+ for(let i=0;i<4;i++){const f=fr(U[i]+(U[i+1]-U[i])*.5);for(const sd of[1,-1]){const G=new THREE.Group();G.position.copy(f.p).addScaledVector(f.l,sd*(HW+1.8));G.rotation.y=f.yaw;scene.add(G)
+  bx(.5,.07,1.4,BM,0,.45,0,G);bx(.5,.35,.07,BM,sd*.22,.7,0,G);[[-.2,-.6],[-.2,.6],[.2,-.6],[.2,.6]].forEach(([x,z])=>bx(.06,.45,.06,BL,x,.22,z,G))}}}
 {const pG=new THREE.CylinderGeometry(.4,.32,.6,14),lG=new THREE.SphereGeometry(.6,14,10);geos.push(pG,lG)
  const pot=new THREE.InstancedMesh(pG,mk({color:0x8a6a4a,metalness:0,roughness:.85}),40),leaf=new THREE.InstancedMesh(lG,mk({color:0x4f8f3a,metalness:0,roughness:.9}),40)
  let n=0;for(let i=0;i<4;i++){for(const fr0 of [.3,.7]){const f=fr(U[i]+(U[i+1]-U[i])*fr0);for(const sd of [1,-1]){

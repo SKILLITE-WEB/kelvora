@@ -59,6 +59,17 @@ export function buildRooms({scene,fr,U,slots,mob}){
   add(2.6,.02,4.6,mm({color:0xaeb6c2,roughness:1}),3.6,.005,0,.008)
   // water cooler
   add(.4,.9,.4,mm({color:0xf4f1ea,roughness:.5}),4.9,.45,3.0,.04);add(.28,.42,.28,mm({color:0xbfe3f0,transparent:true,opacity:.7,roughness:.1,depthWrite:false}),4.9,1.1,3.0,.1)
+  // big-props
+  {const W_=mm({color:0xf4f1ea,roughness:.5}),OAK=mm({color:0xb99b74,roughness:.6}),GR=mm({color:0x6b7280,roughness:.8}),GLS=mm({color:0xcfe6ee,transparent:true,opacity:.22,roughness:.1,depthWrite:false}),LV=mm({color:0x4f8f3a,roughness:.9}),PT=mm({color:0x8a6a4a,roughness:.8}),SK=mm({color:0x1b1e29,roughness:.5}),NT=[mm({color:0xffd27a,roughness:.8}),mm({color:0x9ad0ec,roughness:.8}),mm({color:0xf4a6b8,roughness:.8})]
+   const plant=(l,a,s)=>{add(.5*s,.45*s,.5*s,PT,l,.22*s,a,.07);add(.8*s,1.1*s,.8*s,LV,l,1.0*s,a,.28)}
+   add(.04,.12,6.6,W_,5.17,.06,0,.005)
+   if(i===0){plant(5.0,-3.0,1.4);plant(1.8,3.2,1.2);add(.05,.9,2.2,SK,5.15,2.0,0,.01);add(.06,.08,2.0,acc,5.13,2.52,0,.005)}
+   if(i===1){plant(5.0,3.0,1.3);add(.05,1.2,2.4,W_,5.17,1.7,-1.2,.01);[-2.0,-1.3,-.6].forEach((al,j)=>add(.03,.22,.22,NT[j],5.14,1.8+j*.1,al,.005));add(.06,1.4,1.0,GLS,1.9,.9,-3.0,.01);add(.07,.05,1.04,acc,1.9,1.62,-3.0,.005)}
+   if(i===2){plant(5.0,-3.0,1.2);[2.3,3.0].forEach(al=>{add(.6,2.0,.6,SK,4.85,1.0,al,.03);add(.03,1.6,.04,acc,4.54,1.0,al,.005)})}
+   if(i===3){plant(5.0,-3.0,1.3);add(.8,.08,1.4,OAK,4.8,.9,2.7,.02);[[-.6,-.35],[-.6,.35],[.6,-.35],[.6,.35]].forEach(([b,c])=>add(.06,.9,.06,SK,4.8+c,.45,2.7+b,.005));add(.05,1.0,1.4,GR,5.17,1.7,2.7,.01);[0,1,2].forEach(j=>add(.04,.2,.08,NT[j],5.13,1.9-j*.0,2.2+j*.5,.005))
+    add(.06,1.1,1.5,W_,1.9,1.4,-3.0,.01);[.3,.5,.75].forEach((h,j)=>add(.1,h,.25,j%2?acc:NT[1],1.86,.85+h/2,-3.4+j*.4,.01))}
+   if(i===4){plant(5.0,3.0,1.5);plant(5.0,-3.0,1.3);add(.06,1.2,2.6,SK,5.15,1.8,0,.01);add(.06,.08,2.4,acc,5.12,2.5,0,.005)
+    add(.9,.06,1.0,OAK,2.1,.38,-3.0,.02);add(.06,.34,.06,SK,2.1,.19,-3.0,.005);add(.4,.35,.4,GR,2.1,.18,-2.2,.08);add(.4,.35,.4,GR,2.1,.18,-3.8,.08)}}
   // desks + agent slots (agent faces the road)
   const f=V(-F.r.x*sd,0,-F.r.z*sd),fy=atan2(f.x,f.z),S={}
   const dg=new THREE.CylinderGeometry(.028,.032,.025,18);extra.push(dg)
