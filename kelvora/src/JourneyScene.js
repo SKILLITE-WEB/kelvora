@@ -226,18 +226,28 @@ const cache=[];let ps=0,first=true,lastAct=-2,lastDist=0,lastYaw=0,ph=0,W=0,yaw=
 const camP=V(),camL=V()
 const _o0=V(),_o1=V()
 const office=createOffice({scene,fr,pt,U,L,E,hemi,sun,torso,root,camP,getP,mob,reduced,onPhase:api.onPhase||(()=>{})})
+/*tail*/const UE=.9,FG=new THREE.Group();
+{const f=fr(UE),P=FG;FG.position.copy(f.p).addScaledVector(f.r,1);FG.rotation.y=f.yaw;scene.add(FG)
+ bx(1.4,.06,.62,SH,0,.69,.6,P);[-.64,.64].forEach(x=>bx(.06,.66,.56,DK,x,.33,.6,P));bx(1.1,.4,.03,DK,0,.5,.88,P)
+ bx(.5,.03,.18,DK,0,.735,.46,P);bx(.38,.006,.02,GL(),0,.752,.55,P);bx(.05,.3,.05,DK,0,.87,.86,P);bx(.9,.54,.04,DK,0,1.1,.88,P)
+ const T=tex(256,160,(x,w,h)=>{x.fillStyle='#0b0d14';x.fillRect(0,0,w,h);x.fillStyle='#161a26';x.fillRect(0,0,w,18);for(let i=0;i<6;i++){const v=20+(i*37)%70;x.fillStyle=i%2?'#38d4ee':'#b9f45c';x.fillRect(18+i*38,h-14-v,24,v)}})
+ const sm=new THREE.MeshBasicMaterial({map:T.t});mats.push(sm);add(new THREE.PlaneGeometry(.8,.46),sm,0,1.1,.855,P).rotation.y=PI
+ bx(.5,.05,.46,DK,0,.375,-.02,P);bx(.46,.34,.05,DK,0,.62,-.27,P);cy(.03,.03,.34,DK,0,.2,-.02,P);bx(.5,.04,.06,DK,0,.05,-.02,P);bx(.06,.04,.5,DK,0,.05,-.02,P)
+ bx(2.2,.01,2.2,mk({color:0xaeb6c2,metalness:0,roughness:1}),0,.005,.4,P)}
+const tail=(s,tp)=>{const a=ss(.03,.09,tp),b=cl((tp-.09)/.71),c=ss(.8,.88,tp);if(tp>.03)s.act=-1
+ s.pres=tp<.5?1-a:0;s.sd=1;s.lat=c;s.u=U[4]+.006*a+(UE-U[4]-.012)*b+.006*c;return ss(.87,.96,tp)}
 const frame=(dt,t)=>{
  const kk=r=>1-exp(-dt*r)
  let p=getP()
  if(reduced){let bi=0,bd=9;TL.w.forEach((g,i)=>{const d=abs(p*TL.total-(g.a+g.b)/2);if(d<bd){bd=d;bi=i}});const g=TL.w[bi];p=(g.a+.85*(g.b-g.a))/TL.total;ps=p}
  else ps=first?p:ps+(p-ps)*kk(9)
- const q=ps*TL.total,s=state(q)
+ /*sw*/const q=ps*TL.total,s=state(q),tp=reduced?0:cl(ps-1),sw=tp>0?tail(s,tp):0,cw=ss(.78,.9,tp)
  if(s.act!==lastAct){lastAct=s.act;if(onStation)onStation(s.act)}
  const outs=devs.map((fn,i)=>{const wv=cl((q-TL.w[i].a)/(TL.w[i].b-TL.w[i].a)),c=cache[i];if(c&&c.w===wv)return c.o;const o=fn(wv);cache[i]={w:wv,o};return o})
  let out=(s.act>=0&&outs[s.act])||{}
  const f=fr(s.u),pres=s.pres,sd=s.sd
  const ov=office.pose(dt,t,{p,s,f});if(ov&&ov.out)out=Object.assign({},out,ov.out)
- root.position.copy(f.p).addScaledVector(f.r,ROB_LAT*pres*sd);if(ov)root.position.y+=ov.lift||0
+ root.position.copy(f.p).addScaledVector(f.r,ROB_LAT*pres*sd+(s.lat||0));if(ov)root.position.y+=ov.lift||0
  const dist=s.u*L,dd=first?0:dist-lastDist;lastDist=dist
  W+=((reduced?0:(abs(dd)/max(dt,.001)>.12?1:0))-W)*kk(10)
  ph+=cl(dd,-1.5,1.5)/(2*STR)
@@ -247,12 +257,13 @@ const frame=(dt,t)=>{
  const yr=first?0:wrap(f.yaw-lastYaw)/max(dt,.001);lastYaw=f.yaw
  roll+=(cl(-yr*.08,-.12,.12)*W-roll)*kk(6);pelvis.rotation.z=roll
  const gL=gait(ph),gR=gait(ph+.5),cr=out.crouch||0
- const Hh=.59-cr+.018*W*cos(4*PI*(ph-.25));pelvis.position.y=Hh+.02
- const tk=ov?(ov.tuck||0):0;legSolve(legs[0],gL.x*W,FOOT+gL.y*W-Hh+tk);legSolve(legs[1],gR.x*W,FOOT+gR.y*W-Hh+tk)
- torso.rotation.x=.07*W+(out.lean||0)
+ const Hh=(.59-cr+.018*W*cos(4*PI*(ph-.25)))*(1-sw)+.45*sw;pelvis.position.y=Hh+.02
+ const tk=ov?(ov.tuck||0):0;legSolve(legs[0],gL.x*W*(1-sw)+.26*sw,FOOT+gL.y*W*(1-sw)-Hh+tk);legSolve(legs[1],gR.x*W*(1-sw)+.26*sw,FOOT+gR.y*W*(1-sw)-Hh+tk)
+ torso.rotation.x=.07*W+(out.lean||0)+.06*sw
  root.updateMatrixWorld(true)
  const wv=ov&&ov.arms;let T0=out.lT,w0=out.lW||0,T1=out.rT,w1=out.rW||0
  if(wv){if(wv[0]){T0=root.localToWorld(_o0.set(wv[0][0],wv[0][1],wv[0][2]));w0=wv[0][3]}if(wv[1]){T1=root.localToWorld(_o1.set(wv[1][0],wv[1][1],wv[1][2]));w1=wv[1][3]}}
+ if(sw>.02){const kz=.775+.012*max(0,sin(t*13));T0=root.localToWorld(_o0.set(.14+.05*sin(t*7),kz,.46));w0=sw;T1=root.localToWorld(_o1.set(-.14+.05*sin(t*6.1+1),.775+.012*max(0,sin(t*11)),.46));w1=sw}
  arm(arms[0],.5*W*gL.x/(STR/2),T0,w0);arm(arms[1],.5*W*gR.x/(STR/2),T1,w1)
  let ty=0,tx=0;const lk=out.lookCam?camP:out.look
  if(lk&&out.lookW>.01){const l=torso.worldToLocal(_a.copy(lk)).sub(head.position);ty=cl(atan2(l.x,l.z),-1.1,1.1)*out.lookW;tx=cl(-atan2(l.y,hypot(l.x,l.z)),-.5,.5)*out.lookW}
@@ -268,6 +279,7 @@ const frame=(dt,t)=>{
  const camB=V(rp.x,rp.y+2.3*M,rp.z).addScaledVector(f.h,-2.4*M).addScaledVector(f.r,-3.6*M*sd)
  const lookB=V(rp.x,rp.y+.7,rp.z).addScaledVector(f.r,2.6*sd).addScaledVector(f.h,.4)
  const camT=camA.lerp(camB,pres),lookT=lookA.lerp(lookB,pres);camT.y=max(camT.y,f.p.y+.9);if(ov&&ov.cam){camT.addScaledVector(f.h,-ov.cam.back);camT.y+=ov.cam.up;lookT.y+=ov.cam.look;lookT.addScaledVector(f.h,ov.cam.ahead||0)}
+ if(cw>.001){const cs=V(rp.x,rp.y+1.9*M,rp.z).addScaledVector(f.h,1.9*M).addScaledVector(f.r,-1.4*M),ls=V(rp.x,rp.y+.8,rp.z).addScaledVector(f.h,.3);camT.lerp(cs,cw);lookT.lerp(ls,cw)}
  const dv=V().subVectors(lookT,camT),lf=V(dv.z,0,-dv.x).normalize()
  if(cam.aspect>1.15)lookT.addScaledVector(lf,1.25*M*sideOf(s.u)*(1-pres));else lookT.y-=cl(camT.distanceTo(lookT)*.12,.3,.7)
  if(first){camP.copy(camT);camL.copy(lookT)}else{camP.lerp(camT,kk(6));camL.lerp(lookT,kk(7))}
