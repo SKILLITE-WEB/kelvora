@@ -35,7 +35,7 @@ function builder(){const g=new THREE.Group(),geo=[],texs=[],scr=[];let ls=-1
   scr.push({draw:(t,s)=>{draw(cx,c.width,c.height,t,s,seed);T.needsUpdate=true}})}
  const tick=(t,s)=>{if(t-ls<.12)return;ls=t;scr.forEach(x=>x.draw(t,s))}
  return{g,bx,cy,blob,screen,geo,texs,tick}}
-const room=b=>{const{g,bx}=b
+const room=b=>{const{g,bx,cy}=b;const LS=mat('lampS',{color:0xfff1d6,emissive:0xfff1d6,emissiveIntensity:.45,roughness:.6});[-3.2,3.2].forEach(x=>{cy(.14,.14,.03,DK(),x,.015,4.5,g);cy(.02,.02,1.5,MID(),x,.78,4.5,g);cy(.17,.12,.22,LS,x,1.6,4.5,g)});
  bx(26,.1,12,FLOOR(),0,-.05,1.5,g,.03)
  const gr=new THREE.GridHelper(26,52,0xcbc5b8,0xcbc5b8);gr.position.set(0,.003,1.5);gr.material.transparent=true;gr.material.opacity=.55;g.add(gr);b.geo.push(gr.geometry);b.texs.push(gr.material)
  bx(26,7,.12,WALL(),0,3.4,5.2,g,.02);bx(26,.05,.06,mat('acA',{color:0x9db7c2,roughness:.6}),0,2.45,5.12,g,.01);bx(26,.05,.06,mat('acB',{color:0xb8ad9a,roughness:.6}),0,.35,5.12,g,.01);bx(26,.05,.06,mat('acC',{color:0x8fae7a,roughness:.6}),0,3.6,5.12,g,.01)
