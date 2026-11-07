@@ -59,7 +59,7 @@ export function createOffice(c){
   a.fly(p,fl.yaw+wrap(a.sl.yaw-fl.yaw)*ss(.9,1,s),.15+.85*ss(0,.14,s),.16*(1-ss(.85,1,s)),.45*(1-ss(.8,1,s)))
   if(s>=1){a.placeHome();a.flight=null;fl.done=true;const r=rooms[a.def.room];if(r.t0==null)r.t0=clk}}
  const playPose=info=>{const A=(a,b)=>ss(a,b,T),rY=info.f.yaw,cy=atan2(camP.x-root.position.x,camP.z-root.position.z)
-  let y=cy;y+=wrap(cy+.7-y)*A(4,5);y+=wrap(rY-y)*A(11.8,13.2)
+  let y=cy;y+=wrap(rY-y)*A(11.8,13.2)
   const rise=A(5.5,7)*(1-A(11.8,13)),lift=1.5*rise+.035*sin(T*2.2)*rise*A(6.8,7.2);curLift=lift
   const cr=.07*sin(PI*cl((T-4.8)/.8))+.08*sin(PI*cl((T-12.9)/.7))
   const lw=A(.8,1.4)*(1-A(4.3,4.9)),ww=A(2,2.4)*(1-A(3.7,4.1)),sp=A(6,6.8)*(1-A(11.4,12.2))

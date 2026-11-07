@@ -251,11 +251,11 @@ const frame=(dt,t)=>{
  const camA=cb.clone();camA.y+=1.95*M
  const ahead=pt(min(1,s.u+.015));ahead.y+=.5
  const lookA=V(rp.x,rp.y+.75,rp.z).lerp(ahead,.4)
- const camB=V(rp.x,rp.y+1.55*M,rp.z).addScaledVector(f.h,-3*M).addScaledVector(f.r,.3*sd)
- const lookB=V(rp.x,rp.y+.95,rp.z).addScaledVector(f.r,.55*sd)
+ const camB=V(rp.x,rp.y+2.3*M,rp.z).addScaledVector(f.h,-2.4*M).addScaledVector(f.r,-3.6*M*sd)
+ const lookB=V(rp.x,rp.y+.7,rp.z).addScaledVector(f.r,2.6*sd).addScaledVector(f.h,.4)
  const camT=camA.lerp(camB,pres),lookT=lookA.lerp(lookB,pres);camT.y=max(camT.y,f.p.y+.9);if(ov&&ov.cam){camT.addScaledVector(f.h,-ov.cam.back);camT.y+=ov.cam.up;lookT.y+=ov.cam.look;lookT.addScaledVector(f.h,ov.cam.ahead||0)}
  const dv=V().subVectors(lookT,camT),lf=V(dv.z,0,-dv.x).normalize()
- if(cam.aspect>1.15)lookT.addScaledVector(lf,1.25*M*sideOf(s.u));else lookT.y-=cl(camT.distanceTo(lookT)*.12,.3,.7)
+ if(cam.aspect>1.15)lookT.addScaledVector(lf,1.25*M*sideOf(s.u)*(1-pres));else lookT.y-=cl(camT.distanceTo(lookT)*.12,.3,.7)
  if(first){camP.copy(camT);camL.copy(lookT)}else{camP.lerp(camT,kk(6));camL.lerp(lookT,kk(7))}
  cam.position.copy(camP);cam.lookAt(camL)
  sun.position.set(rp.x-5,rp.y+10,rp.z+4);sun.target.position.copy(rp);blob.position.set(rp.x,f.p.y+.015,rp.z)
