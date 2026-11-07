@@ -65,6 +65,12 @@ sweep([[[HW-.06,.012],[HW-.14,.012]],[[-HW+.14,.012],[-HW+.06,.012]]],lineM).vis
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mk({color:0xffffff,map:(()=>{const f=tex(128,128,(x,w,h)=>{x.fillStyle='#e6e1d7';x.fillRect(0,0,w,h);x.strokeStyle='#dcd6ca';x.lineWidth=2;x.strokeRect(0,0,w,h)});f.t.wrapS=f.t.wrapT=THREE.RepeatWrapping;f.t.repeat.set(233,233);return f.t})(),metalness:0,roughness:.9}));geos.push(ground.geometry);ground.rotation.x=-PI/2;ground.position.set(0,-.05,100);scene.add(ground)
 const grid=new THREE.GridHelper(500,250,0xcbc5b8,0xcbc5b8);grid.material.transparent=true;grid.material.opacity=.55;grid.position.set(0,-.71,100);grid.visible=false;scene.add(grid);geos.push(grid.geometry);mats.push(grid.material)
 const dm=new THREE.Object3D()
+{const pG=new THREE.CylinderGeometry(.2,.16,.3,14),lG=new THREE.SphereGeometry(.3,14,10);geos.push(pG,lG)
+ const pot=new THREE.InstancedMesh(pG,mk({color:0x8a6a4a,metalness:0,roughness:.85}),40),leaf=new THREE.InstancedMesh(lG,mk({color:0x4f8f3a,metalness:0,roughness:.9}),40)
+ let n=0;for(let i=0;i<4;i++){for(const fr0 of [.3,.7]){const f=fr(U[i]+(U[i+1]-U[i])*fr0);for(const sd of [1,-1]){
+  dm.position.copy(f.p).addScaledVector(f.l,sd*(HW+.55));dm.position.y+=.15;dm.rotation.set(0,0,0);dm.scale.set(1,1,1);dm.updateMatrix();pot.setMatrixAt(n,dm.matrix)
+  dm.position.y+=.45;dm.scale.set(1,1.2,1);dm.updateMatrix();leaf.setMatrixAt(n,dm.matrix);n++}}}
+ pot.count=leaf.count=n;scene.add(pot,leaf);dm.scale.set(1,1,1)}
 const lampN=mob()?18:32
 const poleG=new THREE.CylinderGeometry(.03,.03,1.5,8),headG=new THREE.SphereGeometry(.09,10,8);geos.push(poleG,headG)
 const poles=new THREE.InstancedMesh(poleG,DK,lampN),heads=new THREE.InstancedMesh(headG,lineM,lampN);scene.add(poles,heads);poles.visible=false;heads.visible=false
