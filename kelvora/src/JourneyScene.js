@@ -3,7 +3,7 @@ import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeomet
 import {getEnv} from './Robot3D.jsx'
 import {TL,U,E} from './journeyTL.js'
 import {createOffice} from './office/office.js'
-const ACC=0xb9f45c
+const ACC=0x6bbf2e
 const {PI,sin,cos,atan2,sqrt,min,max,abs,acos,hypot,floor,exp}=Math
 const cl=(v,a=0,b=1)=>min(b,max(a,v))
 const sg=i=>i%2?-1:1
@@ -23,13 +23,13 @@ try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-perfo
 const geos=[],mats=[],texs=[]
 const mob=()=>host.clientWidth<760
 let dpr=min(devicePixelRatio||1,mob()?1.5:2),lost=false
-renderer.setPixelRatio(dpr);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05
+renderer.setPixelRatio(dpr);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.92
 host.appendChild(renderer.domElement)
 const onLost=e=>{e.preventDefault();lost=true;if(onFail)onFail()}
 renderer.domElement.addEventListener('webglcontextlost',onLost)
-const BG=0x090b11,scene=new THREE.Scene();scene.background=new THREE.Color(BG);scene.fog=new THREE.Fog(BG,14,mob()?46:68)
+const BG=0xece8e0,scene=new THREE.Scene();scene.background=new THREE.Color(BG);scene.fog=new THREE.Fog(BG,14,mob()?46:68)
 const cam=new THREE.PerspectiveCamera(40,1,.1,120),env=getEnv()
-const hemi=new THREE.HemisphereLight(0xbfc8ff,0x0a0b10,.9);scene.add(hemi)
+const hemi=new THREE.HemisphereLight(0xfff4e6,0xb4ad9f,.9);scene.add(hemi)
 const sun=new THREE.DirectionalLight(0xffffff,2.1);scene.add(sun,sun.target)
 
 // ---------- helpers ----------
@@ -37,7 +37,7 @@ const mk=o=>{const m=new THREE.MeshPhysicalMaterial({envMap:env,envMapIntensity:
 const GL=()=>{const m=new THREE.MeshStandardMaterial({color:ACC,emissive:ACC,emissiveIntensity:1.6,roughness:.4});mats.push(m);return m}
 const SH=mk({color:0xf1f3fa,metalness:.2,roughness:.22,clearcoat:1,clearcoatRoughness:.08})
 const DK=mk({color:0x1b1e29,metalness:.8,roughness:.32,clearcoat:.5})
-const MID=mk({color:0x2b3040,metalness:.6,roughness:.4})
+const MID=mk({color:0xb99b74,metalness:.05,roughness:.6})
 const add=(g,m,x,y,z,par)=>{geos.push(g);const o=new THREE.Mesh(g,m);o.position.set(x,y,z);par.add(o);return o}
 const rb=(w,h,d,r,m,x,y,z,par)=>add(new RoundedBoxGeometry(w,h,d,3,min(r,min(w,h,d)/2)),m,x,y,z,par)
 const cy=(a,b,h,m,x,y,z,par)=>add(new THREE.CylinderGeometry(a,b,h,22),m,x,y,z,par)
@@ -55,21 +55,21 @@ const sweep=(segs,m)=>{const pos=[],idx=[];segs.forEach(s=>{const base=pos.lengt
  for(let i=0;i<=N;i++){const f=samp[i];for(let j=0;j<2;j++){const[lat,y]=s[j];pos.push(f.p.x+f.l.x*lat,f.p.y+y,f.p.z+f.l.z*lat)}}
  for(let i=0;i<N;i++){const a=base+i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2)}})
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();geos.push(g);const o=new THREE.Mesh(g,m);scene.add(o);return o}
-const roadM=mk({color:0x20242f,metalness:.25,roughness:.55}),curbM=mk({color:0x12141c,metalness:.5,roughness:.5})
+const roadM=mk({color:0xc4beb2,metalness:0,roughness:.85}),curbM=mk({color:0x9d978b,metalness:0,roughness:.8})
 const lineM=new THREE.MeshBasicMaterial({color:ACC,side:THREE.DoubleSide});mats.push(lineM)
 sweep([[[HW,0],[-HW,0]]],roadM)
 sweep([[[HW,0],[HW-.04,-.3]],[[-HW+.04,-.3],[-HW,0]]],curbM)
 sweep([[[HW-.06,.012],[HW-.14,.012]],[[-HW+.14,.012],[-HW+.06,.012]]],lineM)
 
 // ---------- world ----------
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mk({color:0x0b0d14,metalness:0,roughness:1}));geos.push(ground.geometry);ground.rotation.x=-PI/2;ground.position.set(0,-.72,100);scene.add(ground)
-const grid=new THREE.GridHelper(500,250,0x2a3140,0x2a3140);grid.material.transparent=true;grid.material.opacity=.4;grid.position.set(0,-.71,100);scene.add(grid);geos.push(grid.geometry);mats.push(grid.material)
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mk({color:0xe2ddd2,metalness:0,roughness:1}));geos.push(ground.geometry);ground.rotation.x=-PI/2;ground.position.set(0,-.72,100);scene.add(ground)
+const grid=new THREE.GridHelper(500,250,0xcbc5b8,0xcbc5b8);grid.material.transparent=true;grid.material.opacity=.55;grid.position.set(0,-.71,100);scene.add(grid);geos.push(grid.geometry);mats.push(grid.material)
 const dm=new THREE.Object3D()
 const lampN=mob()?18:32
 const poleG=new THREE.CylinderGeometry(.03,.03,1.5,8),headG=new THREE.SphereGeometry(.09,10,8);geos.push(poleG,headG)
 const poles=new THREE.InstancedMesh(poleG,DK,lampN),heads=new THREE.InstancedMesh(headG,lineM,lampN);scene.add(poles,heads)
 for(let i=0;i<lampN;i++){const f=fr(.03+.95*i/(lampN-1));dm.position.copy(f.p).addScaledVector(f.l,HW+.35);dm.position.y+=.75;dm.updateMatrix();poles.setMatrixAt(i,dm.matrix);dm.position.y+=.8;dm.updateMatrix();heads.setMatrixAt(i,dm.matrix)}
-const NB=mob()?70:140,bg=new THREE.BoxGeometry(1,1,1);geos.push(bg)
+const NB=0,bg=new THREE.BoxGeometry(1,1,1);geos.push(bg)
 const boxes=new THREE.InstancedMesh(bg,mk({color:0x151a26,metalness:.35,roughness:.6,envMapIntensity:.5}),NB);scene.add(boxes)
 let placed=0,guard=0
 while(placed<NB&&guard++<3000){const x=(Math.random()-.5)*90,z=-12+Math.random()*230;let dmin=1e9
@@ -77,7 +77,7 @@ while(placed<NB&&guard++<3000){const x=(Math.random()-.5)*90,z=-12+Math.random()
  if(dmin<8)continue
  const w=1.5+Math.random()*3.5,h=1+Math.random()*8,d=1.5+Math.random()*3.5
  dm.position.set(x,-.72+h/2,z);dm.scale.set(w,h,d);dm.updateMatrix();boxes.setMatrixAt(placed++,dm.matrix)}
-boxes.count=placed;dm.scale.set(1,1,1)
+boxes.count=placed;boxes.visible=false;dm.scale.set(1,1,1)
 
 // ---------- stations (each with its own purposeful action) ----------
 const d0=D=>{

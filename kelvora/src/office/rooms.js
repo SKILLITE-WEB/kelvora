@@ -25,9 +25,9 @@ export function buildRooms({scene,fr,U,slots,mob}){
   const wh=mm({color:0xe9ecf6,roughness:.5})
   const add=(w,h,d,m,lat,y,al,r=.03)=>{const o=new THREE.Mesh(gb(w,h,d,r),m);o.position.set(-sd*lat,y,al);G.add(o);return o}
   // architecture: open-sided floor, low back wall, doorway pillars
-  add(3.9,.6,6.6,MID(),3.35,-.32,0,.06)
+  add(3.9,.6,6.6,mm({color:0xd9d3c7,roughness:.75}),3.35,-.32,0,.06)
   add(.06,.02,6.6,acc,1.43,-.01,0,.005)
-  add(.12,.85,6.6,DK(),5.25,.4,0)
+  add(.12,.85,6.6,mm({color:0xf4f1ea,roughness:.6}),5.25,.4,0)
   add(.14,.04,6.6,acc,5.25,.84,0,.01)
   ;[1.62,-1.62].forEach(l=>{add(.14,1.7,.14,DK(),l,.83,-2.4);add(.04,1.4,.03,acc,l,.85,-2.315,.01)})
   // shared display on a stand
@@ -63,7 +63,7 @@ export function buildRooms({scene,fr,U,slots,mob}){
  // corridor floor lights: the old road becomes an office walkway that lights up as agents pass
  const NC=mob?40:72,u0=U[0]-.02,u1=U[U.length-1]+.02,cu=[]
  const cg=new THREE.BoxGeometry(.36,.012,.1),cmat=new THREE.MeshBasicMaterial({color:0xffffff})
- const inst=new THREE.InstancedMesh(cg,cmat,NC),d=new THREE.Object3D(),c1=new THREE.Color(0x151b28),c2=new THREE.Color(0xb9f45c),tc=new THREE.Color()
+ const inst=new THREE.InstancedMesh(cg,cmat,NC),d=new THREE.Object3D(),c1=new THREE.Color(0xcfc9bd),c2=new THREE.Color(0xb9f45c),tc=new THREE.Color()
  for(let i=0;i<NC;i++){const uu=u0+(u1-u0)*i/(NC-1),f=fr(uu);cu.push(uu);d.position.set(f.p.x,f.p.y+.012,f.p.z);d.rotation.y=f.yaw;d.updateMatrix();inst.setMatrixAt(i,d.matrix);inst.setColorAt(i,c1)}
  inst.frustumCulled=false;scene.add(inst)
  let lastW=-9
