@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import {getEnv} from './Robot3D.jsx'
 import {TL,U,E} from './journeyTL.js'
+import {createOffice} from './office/office.js'
 const ACC=0xb9f45c
 const {PI,sin,cos,atan2,sqrt,min,max,abs,acos,hypot,floor,exp}=Math
 const cl=(v,a=0,b=1)=>min(b,max(a,v))
@@ -28,7 +29,7 @@ const onLost=e=>{e.preventDefault();lost=true;if(onFail)onFail()}
 renderer.domElement.addEventListener('webglcontextlost',onLost)
 const BG=0x090b11,scene=new THREE.Scene();scene.background=new THREE.Color(BG);scene.fog=new THREE.Fog(BG,14,mob()?46:68)
 const cam=new THREE.PerspectiveCamera(40,1,.1,120),env=getEnv()
-scene.add(new THREE.HemisphereLight(0xbfc8ff,0x0a0b10,.9))
+const hemi=new THREE.HemisphereLight(0xbfc8ff,0x0a0b10,.9);scene.add(hemi)
 const sun=new THREE.DirectionalLight(0xffffff,2.1);scene.add(sun,sun.target)
 
 // ---------- helpers ----------
@@ -203,6 +204,8 @@ const state=q=>{const g=TL.s;let u=U[0]-E,pres=0,act=q<g[0].a?0:-1,sd=1
 
 const cache=[];let ps=0,first=true,lastAct=-2,lastDist=0,lastYaw=0,ph=0,W=0,yaw=0,roll=0
 const camP=V(),camL=V()
+const _o0=V(),_o1=V()
+const office=createOffice({scene,fr,pt,U,L,E,hemi,sun,torso,root,camP,getP,mob,reduced,onPhase:api.onPhase||(()=>{})})
 const frame=(dt,t)=>{
  const kk=r=>1-exp(-dt*r)
  let p=getP()
@@ -211,23 +214,26 @@ const frame=(dt,t)=>{
  const q=ps*TL.total,s=state(q)
  if(s.act!==lastAct){lastAct=s.act;if(onStation)onStation(s.act)}
  const outs=devs.map((fn,i)=>{const wv=cl((q-TL.w[i].a)/(TL.w[i].b-TL.w[i].a)),c=cache[i];if(c&&c.w===wv)return c.o;const o=fn(wv);cache[i]={w:wv,o};return o})
- const out=(s.act>=0&&outs[s.act])||{}
+ let out=(s.act>=0&&outs[s.act])||{}
  const f=fr(s.u),pres=s.pres,sd=s.sd
- root.position.copy(f.p).addScaledVector(f.r,ROB_LAT*pres*sd)
+ const ov=office.pose(dt,t,{p,s,f});if(ov&&ov.out)out=Object.assign({},out,ov.out)
+ root.position.copy(f.p).addScaledVector(f.r,ROB_LAT*pres*sd);if(ov)root.position.y+=ov.lift||0
  const dist=s.u*L,dd=first?0:dist-lastDist;lastDist=dist
  W+=((reduced?0:(abs(dd)/max(dt,.001)>.12?1:0))-W)*kk(10)
  ph+=cl(dd,-1.5,1.5)/(2*STR)
  let yt=f.yaw-PI/2*pres*sd
  if(out.faceCam){const cyaw=atan2(camP.x-root.position.x,camP.z-root.position.z);yt+=wrap(cyaw-yt)*out.faceCam}
- yaw=first?yt:yaw+wrap(yt-yaw)*kk(9);root.rotation.y=yaw
+ if(ov&&ov.yaw!=null)yt=ov.yaw;yaw=first?yt:yaw+wrap(yt-yaw)*kk(9);root.rotation.y=yaw
  const yr=first?0:wrap(f.yaw-lastYaw)/max(dt,.001);lastYaw=f.yaw
  roll+=(cl(-yr*.08,-.12,.12)*W-roll)*kk(6);pelvis.rotation.z=roll
  const gL=gait(ph),gR=gait(ph+.5),cr=out.crouch||0
  const Hh=.59-cr+.018*W*cos(4*PI*(ph-.25));pelvis.position.y=Hh+.02
- legSolve(legs[0],gL.x*W,FOOT+gL.y*W-Hh);legSolve(legs[1],gR.x*W,FOOT+gR.y*W-Hh)
+ const tk=ov?(ov.tuck||0):0;legSolve(legs[0],gL.x*W,FOOT+gL.y*W-Hh+tk);legSolve(legs[1],gR.x*W,FOOT+gR.y*W-Hh+tk)
  torso.rotation.x=.07*W+(out.lean||0)
  root.updateMatrixWorld(true)
- arm(arms[0],.5*W*gL.x/(STR/2),out.lT,out.lW||0);arm(arms[1],.5*W*gR.x/(STR/2),out.rT,out.rW||0)
+ const wv=ov&&ov.arms;let T0=out.lT,w0=out.lW||0,T1=out.rT,w1=out.rW||0
+ if(wv){if(wv[0]){T0=root.localToWorld(_o0.set(wv[0][0],wv[0][1],wv[0][2]));w0=wv[0][3]}if(wv[1]){T1=root.localToWorld(_o1.set(wv[1][0],wv[1][1],wv[1][2]));w1=wv[1][3]}}
+ arm(arms[0],.5*W*gL.x/(STR/2),T0,w0);arm(arms[1],.5*W*gR.x/(STR/2),T1,w1)
  let ty=0,tx=0;const lk=out.lookCam?camP:out.look
  if(lk&&out.lookW>.01){const l=torso.worldToLocal(_a.copy(lk)).sub(head.position);ty=cl(atan2(l.x,l.z),-1.1,1.1)*out.lookW;tx=cl(-atan2(l.y,hypot(l.x,l.z)),-.5,.5)*out.lookW}
  else{const f2=fr(min(1,s.u+.02));ty=cl(wrap(f2.yaw-f.yaw)*.8,-.6,.6)*(1-pres)}
@@ -241,7 +247,7 @@ const frame=(dt,t)=>{
  const lookA=V(rp.x,rp.y+.75,rp.z).lerp(ahead,.4)
  const camB=V(rp.x,rp.y+1.55*M,rp.z).addScaledVector(f.h,-3*M).addScaledVector(f.r,.3*sd)
  const lookB=V(rp.x,rp.y+.95,rp.z).addScaledVector(f.r,.55*sd)
- const camT=camA.lerp(camB,pres),lookT=lookA.lerp(lookB,pres);camT.y=max(camT.y,f.p.y+.9)
+ const camT=camA.lerp(camB,pres),lookT=lookA.lerp(lookB,pres);camT.y=max(camT.y,f.p.y+.9);if(ov&&ov.cam){camT.addScaledVector(f.h,-ov.cam.back);camT.y+=ov.cam.up;lookT.y+=ov.cam.look;lookT.addScaledVector(f.h,ov.cam.ahead||0)}
  const dv=V().subVectors(lookT,camT),lf=V(dv.z,0,-dv.x).normalize()
  if(cam.aspect>1.15)lookT.addScaledVector(lf,1.25*M*sideOf(s.u));else lookT.y-=cl(camT.distanceTo(lookT)*.12,.3,.7)
  if(first){camP.copy(camT);camL.copy(lookT)}else{camP.lerp(camT,kk(6));camL.lerp(lookT,kk(7))}
@@ -255,7 +261,7 @@ const loop=now=>{raf=requestAnimationFrame(loop);const raw=(now-last)/1000;last=
  if(document.hidden||lost)return
  if(!visible()){first=true;return}
  if(reduced&&!needs)return
- if(!reduced&&!needs&&now-act>1600&&now-lr<120)return
+ if(!reduced&&!needs&&now-act>1600&&now-lr<(mob()?50:33))return
  lr=now
  needs=false;frame(reduced?10:min(.05,raw),now/1000);renderer.render(scene,cam)
  if(!reduced){acc+=raw;n++;if(n===90){if(!warm&&acc/90>.026&&dpr>1){dpr=1;renderer.setPixelRatio(1);size()}warm=false;acc=0;n=0}}}
@@ -263,5 +269,5 @@ const onScroll=()=>{needs=true;act=performance.now()}
 const ro=new ResizeObserver(size);ro.observe(host);size()
 addEventListener('scroll',onScroll,{passive:true})
 raf=requestAnimationFrame(loop)
-return{dispose(){cancelAnimationFrame(raf);ro.disconnect();removeEventListener('scroll',onScroll);renderer.domElement.removeEventListener('webglcontextlost',onLost)
+return{replay:()=>office.replay(),skip:()=>office.skip(),dispose(){office.dispose();cancelAnimationFrame(raf);ro.disconnect();removeEventListener('scroll',onScroll);renderer.domElement.removeEventListener('webglcontextlost',onLost)
  geos.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());texs.forEach(t=>t.dispose());boxes.dispose();poles.dispose();heads.dispose();renderer.dispose();renderer.forceContextLoss&&renderer.forceContextLoss();renderer.domElement.remove()}}}

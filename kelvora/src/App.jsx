@@ -17,6 +17,7 @@ import {Routes,Route,Link,Navigate,useNavigate,useLocation} from 'react-router-d
 import {collection,addDoc,updateDoc,setDoc,doc,serverTimestamp} from 'firebase/firestore'
 import {db,login,useUser,useCol} from './firebase.js'
 import VIDEOS from './videos.js'
+import REELS from './reels.js'
 const AdminPanel=_lz(()=>import('./Admin.jsx')),AgentsPage=_lz(()=>import('./Agents.jsx'))
 const AuditPage=_lz(()=>import('./Scout.jsx').then(m=>({default:m.AuditPage})))
 const BizPage=_lz(()=>import('./Profile.jsx').then(m=>({default:m.BizPage})))
@@ -45,9 +46,14 @@ return <form onSubmit={go}><input required placeholder="Subject" value={s} onCha
 {ok&&<small style={{color:'var(--l)'}}>Sent! Replies will appear in your dashboard.</small>}</form>}
 
 function Portfolio(){const b=useCol('businesses',['verified','==',true])
-return <main className="wrap"><h2><small>Portfolio</small>Our work</h2>
+return <main className="wrap"><h2><small>Portfolio · Websites</small>Websites we built</h2>
 {VIDEOS.length===0&&<p style={{color:'#8a87aa'}}>Showreel coming soon.</p>}
 <div className="grid" style={{gridTemplateColumns:'repeat(auto-fit,minmax(min(320px,100%),1fr))'}}>{VIDEOS.map((v,i)=><div key={i}><Vid v={v}/><p style={{margin:'8px 0 0'}}>{v.title}</p></div>)}</div>
+<h2><small>Portfolio · Marketing</small>Reels and social content</h2>
+<p style={{maxWidth:'60ch',marginBottom:14}}>Short-form video, social media and motion graphics made by our creative team.</p>
+{REELS.length===0&&<p style={{color:'#8a87aa'}}>Reels coming soon.</p>}
+<div className="reels">{REELS.map((v,i)=><div key={i}><Vid v={{...v,reel:1}}/><p style={{margin:'8px 0 0',fontSize:14}}>{v.title}</p></div>)}</div>
+<div className="card glow" style={{marginTop:20}}><h3>Want reels like these for your business?</h3><p>Social media management, reels, video editing and motion graphics by our team.</p><br/><Link className="btn" to="/agents">Request a quote →</Link></div>
 <h2><small>Community</small>Verified businesses</h2><div className="grid">{b.map(x=><div className="card rv" key={x.id}><span className="tag">✓ Verified</span><h3>{x.name}</h3><small>{x.category}</small><p>{x.desc}</p>{cleanUrl(x.link)&&<a href={cleanUrl(x.link)} target="_blank" rel="noreferrer" style={{color:'var(--c)'}}>Visit →</a>}</div>)}</div></main>}
 
 function Store({u}){const s=useCol('services');const[n,setN]=useState('')

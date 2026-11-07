@@ -8,8 +8,9 @@ const ST=[
 {k:'02 · Automate',n:'Automate',t:'Agents and software that do the work.',d:'We build AI agents and custom software that handle follow-ups, reminders, reports and data entry, so your team stops doing them by hand.',c:[['See AI agents','/agents']]},
 {k:'03 · Grow',n:'Grow',t:'Less effort, more profit.',d:'When manual work drops, time and money go back into growth. Our creative team adds social media, video and motion graphics.',c:[['Browse services','/store'],['Our portfolio','/portfolio',1]]},
 {k:'One chat for everything',n:'Start',t:'A platform where businesses grow together.',d:'Register, get verified, showcase your profile, and request services in one chat.',c:[['Get started','/register'],['Browse the network','/network',1]]}]
+const SAY={wave:'Hi! I’m Chimpuk. Welcome to Kelvora.',ascent:'One moment…',deploy:'My little agents are heading to their desks.'}
 export default function Journey({me}){
-const root=useRef(),host=useRef(),pan=useRef([]),nav=useRef([]),st=useRef();const[mode,setMode]=useState('init')
+const root=useRef(),host=useRef(),pan=useRef([]),nav=useRef([]),st=useRef(),jr=useRef(null);const[mode,setMode]=useState('init');const[ph,setPh]=useState('ready')
 useEffect(()=>{
  if(pan.current[0])pan.current[0].classList.add('on')
  let dead=false,j=null,off=false
@@ -26,11 +27,12 @@ useEffect(()=>{
   const onStation=i=>{if(i>=0&&st.current)st.current.dataset.side=i%2?'r':'l'
    pan.current.forEach((e,k)=>{if(e)e.classList.toggle('on',k===i)})
    nav.current.forEach((e,k)=>{if(!e)return;if(k===i)e.setAttribute('aria-current','step');else e.removeAttribute('aria-current')})}
-  j=m.createJourney(host.current,{getP,visible:()=>true,onStation,onFail:()=>{document.body.classList.remove('home3d');setMode('fb')},reduced:rm})
+  j=m.createJourney(host.current,{getP,visible:()=>true,onStation,onPhase:setPh,onFail:()=>{document.body.classList.remove('home3d');setMode('fb')},reduced:rm})
+  jr.current=j
   if(j)document.body.classList.add('home3d')
   setMode(j?'3d':'fb')
  }).catch(()=>setMode('fb'))
- return()=>{dead=true;document.body.classList.remove('home3d');if(j)j.dispose()}
+ return()=>{dead=true;jr.current=null;document.body.classList.remove('home3d');if(j)j.dispose()}
 },[])
 const go=i=>{const el=root.current,top=el.getBoundingClientRect().top+scrollY,span=el.offsetHeight-innerHeight
  scrollTo({top:top+stationP(i)*span,behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'})}
@@ -40,6 +42,8 @@ return <>
 <div className={'jny'+(mode==='fb'?' jny-fb':'')} ref={root}><div className="jny-st" ref={st} data-side="l">
 <a className="jny-skip" href="#jny-end">Skip the journey</a>
 <nav className="jny-nav" aria-label="Journey stops">{S.map((s,i)=><button key={i} type="button" className="s" ref={e=>{nav.current[i]=e}} onClick={()=>go(i)}><b>{i+1}</b><span>{s.n}</span></button>)}</nav>
+{mode==='3d'&&<><div className="jny-say" role="status" aria-live="polite" data-on={SAY[ph]?1:0}>{SAY[ph]||''}</div>
+<div className="jny-ctl">{ph!=='ready'?<button type="button" className="s" onClick={()=>jr.current&&jr.current.skip()}>Skip intro</button>:<button type="button" className="s" onClick={()=>{scrollTo({top:0,behavior:'auto'});jr.current&&jr.current.replay()}}>↺ Replay intro</button>}</div></>}
 {S.map((s,i)=><section key={i} ref={e=>{pan.current[i]=e}} className={'jny-p'+(i%2?' r':'')} aria-labelledby={'jh'+i}>
 <span className="jny-k">{s.k}</span><div id={'jh'+i} role="heading" aria-level={i?2:1} className="jny-h">{s.t}</div><p>{s.d}</p>
 <div className="row">{s.c.map(([l,to,sec])=><Link key={l} className={'btn'+(sec?' s':'')} to={to}>{l}</Link>)}</div>
