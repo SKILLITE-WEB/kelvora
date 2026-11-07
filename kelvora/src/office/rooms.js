@@ -51,6 +51,10 @@ export function buildRooms({scene,fr,U,slots,mob}){
   const wd_=mm({color:0x9a7b55,roughness:.65}),sf_=mm({color:0x7d8b97,roughness:.9}),bk=[mm({color:0x4f8f3a,roughness:.8}),mm({color:0xc9a24a,roughness:.8}),mm({color:0x5f7fa8,roughness:.8})]
   add(.5,2.4,1.5,wd_,5.0,1.2,1.3,.02);[.6,1.3,2.0].forEach((y,j)=>{add(.44,.05,1.46,wd_,4.95,y,1.3,.005);add(.34,.4,1.2,bk[j],4.95,y+.22,1.3,.02)})
   add(1.0,.42,2.2,sf_,4.45,.21,-1.3,.1);add(.28,.62,2.2,sf_,4.9,.55,-1.3,.09)
+  // reception counter (Welcome room only)
+  if(i===0){const rc=mm({color:0xf4f1ea,roughness:.5}),rt=mm({color:0xb99b74,roughness:.6})
+   add(.6,1.0,2.4,rc,2.9,.5,0,.03);add(.7,.06,2.5,rt,2.9,1.03,0,.02);add(.04,.12,2.3,acc,2.58,.85,0,.01)
+   add(.34,.05,.34,mm({color:0x6b7280,roughness:.8}),2.3,.4,-2.0,.05)}
   // desks + agent slots (agent faces the road)
   const f=V(-F.r.x*sd,0,-F.r.z*sd),fy=atan2(f.x,f.z),S={}
   const dg=new THREE.CylinderGeometry(.028,.032,.025,18);extra.push(dg)
