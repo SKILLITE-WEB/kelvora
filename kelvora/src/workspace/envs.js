@@ -35,15 +35,15 @@ function builder(){const g=new THREE.Group(),geo=[],texs=[],scr=[];let ls=-1
   scr.push({draw:(t,s)=>{draw(cx,c.width,c.height,t,s,seed);T.needsUpdate=true}})}
  const tick=(t,s)=>{if(t-ls<.12)return;ls=t;scr.forEach(x=>x.draw(t,s))}
  return{g,bx,cy,blob,screen,geo,texs,tick}}
-const room=b=>{const{g,bx,cy}=b;const LS=mat('lampS',{color:0xfff1d6,emissive:0xfff1d6,emissiveIntensity:.45,roughness:.6});[-3.2,3.2].forEach(x=>{cy(.14,.14,.03,DK(),x,.015,4.5,g);cy(.02,.02,1.5,MID(),x,.78,4.5,g);cy(.17,.12,.22,LS,x,1.6,4.5,g)});
+const room=b=>{const{g,bx,cy}=b;const LS=mat('lampS',{color:0xfff1d6,emissive:0xfff1d6,emissiveIntensity:.45,roughness:.6});[-3.2,3.2].forEach(x=>{cy(.2,.2,.04,DK(),x,.02,4.5,g);cy(.03,.03,2.1,MID(),x,1.07,4.5,g);cy(.26,.18,.32,LS,x,2.25,4.5,g)});
  bx(26,.1,12,FLOOR(),0,-.05,1.5,g,.03)
  const gr=new THREE.GridHelper(26,52,0xcbc5b8,0xcbc5b8);gr.position.set(0,.003,1.5);gr.material.transparent=true;gr.material.opacity=.55;g.add(gr);b.geo.push(gr.geometry);b.texs.push(gr.material)
  bx(26,7,.12,WALL(),0,3.4,5.2,g,.02);bx(26,.05,.06,mat('acA',{color:0x9db7c2,roughness:.6}),0,2.45,5.12,g,.01);bx(26,.05,.06,mat('acB',{color:0xb8ad9a,roughness:.6}),0,.35,5.12,g,.01);bx(26,.05,.06,mat('acC',{color:0x8fae7a,roughness:.6}),0,3.6,5.12,g,.01)
  const GLS=mat('gls',{color:0xcfe6ee,transparent:true,opacity:.18,roughness:.1,depthWrite:false}),POT=mat('pot',{color:0x8a6a4a,roughness:.8}),LEAF=mat('leaf',{color:0x4f8f3a,roughness:.9})
  ;[-7.5,7.5].forEach(x=>{bx(.04,2.4,6.2,GLS,x,1.2,2.2,g,.01);bx(.06,.05,6.2,SH(),x,2.42,2.2,g,.01);bx(.06,.05,6.2,SH(),x,.03,2.2,g,.01)})
- ;[[-6.7,4.5],[6.7,4.5],[-4.4,4.7],[4.4,4.7]].forEach(([x,z])=>{bx(.34,.3,.34,POT,x,.15,z,g,.05);bx(.46,.6,.46,LEAF,x,.6,z,g,.18)})
+ ;[[-6.7,4.5],[6.7,4.5],[-4.4,4.7],[4.4,4.7]].forEach(([x,z])=>{bx(.5,.45,.5,POT,x,.22,z,g,.07);bx(.7,.95,.7,LEAF,x,.9,z,g,.25)})
  const WD=mat('shw',{color:0x9a7b55,metalness:0,roughness:.65}),BK=[mat('bk1',{color:0x4f8f3a,roughness:.8}),mat('bk2',{color:0xc9a24a,roughness:.8}),mat('bk3',{color:0x5f7fa8,roughness:.8})]
- ;[-5.6,5.6].forEach(x=>{bx(1.6,2.1,.4,WD,x,1.05,4.9,g,.02);[.55,1.05,1.55].forEach((y,j)=>{bx(1.5,.04,.36,SH(),x,y,4.9,g,.005);bx(1.3,.3,.3,BK[j],x,y+.17,4.9,g,.02)})})
+ ;[-5.6,5.6].forEach(x=>{bx(2.2,3.0,.5,WD,x,1.5,4.85,g,.02);[.75,1.5,2.25].forEach((y,j)=>{bx(2.1,.05,.46,SH(),x,y,4.85,g,.005);bx(1.8,.42,.38,BK[j],x,y+.24,4.85,g,.02)})})
  const CK=mat('ckw',{color:0xf4f1ea,roughness:.5});bx(.7,.7,.06,CK,0,2.8,5.12,g,.3);bx(.04,.28,.02,DK(),0,2.9,5.08,g,.005);bx(.22,.04,.02,DK(),.08,2.8,5.08,g,.005)}
 const desk=(b,w,x,z,d=.62)=>{const{g,bx}=b;bx(w,.06,d,SH(),x,.69,z,g,.03);[-1,1].forEach(s=>bx(.06,.66,d-.06,DK(),x+s*(w/2-.1),.33,z,g,.02));bx(w-.3,.4,.03,DK(),x,.5,z+d/2-.03,g,.01)}
 const chair=(b,x,z)=>{const{g,bx,cy,blob}=b;bx(.5,.05,.46,DK(),x,.375,z,g,.05);bx(.46,.34,.05,DK(),x,.62,z-.25,g,.04);cy(.03,.03,.34,MID(),x,.2,z);bx(.5,.04,.06,MID(),x,.05,z,g,.015);bx(.06,.04,.5,MID(),x,.05,z,g,.015);blob(x,z,.5)}

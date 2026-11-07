@@ -46,11 +46,11 @@ export function buildRooms({scene,fr,U,slots,mob}){
   
   // small round meeting table
   const tb=mm({color:0xb99b74,roughness:.6}),ch=mm({color:0x6b7280,roughness:.8})
-  add(.7,.04,.7,tb,4.3,.62,2.4,.3);add(.06,.6,.06,DK(),4.3,.3,2.4,.01);add(.34,.05,.34,ch,4.3,.4,1.9,.05);add(.34,.05,.34,ch,4.3,.4,2.9,.05)
+  add(1.0,.05,1.0,tb,4.3,.72,2.4,.4);add(.08,.7,.08,DK(),4.3,.35,2.4,.01);add(.46,.06,.46,ch,4.3,.45,1.7,.06);add(.46,.06,.46,ch,4.3,.45,3.1,.06)
   // bookshelf + sofa
   const wd_=mm({color:0x9a7b55,roughness:.65}),sf_=mm({color:0x7d8b97,roughness:.9}),bk=[mm({color:0x4f8f3a,roughness:.8}),mm({color:0xc9a24a,roughness:.8}),mm({color:0x5f7fa8,roughness:.8})]
-  add(.4,1.7,1.0,wd_,5.0,.85,1.3,.02);[.45,.95,1.4].forEach((y,j)=>{add(.34,.04,.96,wd_,4.97,y,1.3,.005);add(.26,.28,.8,bk[j],4.97,y+.16,1.3,.02)})
-  add(.7,.3,1.5,sf_,4.55,.15,-1.3,.08);add(.2,.4,1.5,sf_,4.85,.4,-1.3,.07)
+  add(.5,2.4,1.5,wd_,5.0,1.2,1.3,.02);[.6,1.3,2.0].forEach((y,j)=>{add(.44,.05,1.46,wd_,4.95,y,1.3,.005);add(.34,.4,1.2,bk[j],4.95,y+.22,1.3,.02)})
+  add(1.0,.42,2.2,sf_,4.45,.21,-1.3,.1);add(.28,.62,2.2,sf_,4.9,.55,-1.3,.09)
   // desks + agent slots (agent faces the road)
   const f=V(-F.r.x*sd,0,-F.r.z*sd),fy=atan2(f.x,f.z),S={}
   const dg=new THREE.CylinderGeometry(.028,.032,.025,18);extra.push(dg)
