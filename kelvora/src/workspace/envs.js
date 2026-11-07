@@ -41,7 +41,10 @@ const room=b=>{const{g,bx}=b
  bx(26,7,.12,WALL(),0,3.4,5.2,g,.02);bx(26,.05,.06,mat('acA',{color:0x9db7c2,roughness:.6}),0,2.45,5.12,g,.01);bx(26,.05,.06,mat('acB',{color:0xb8ad9a,roughness:.6}),0,.35,5.12,g,.01);bx(26,.05,.06,mat('acC',{color:0x8fae7a,roughness:.6}),0,3.6,5.12,g,.01)
  const GLS=mat('gls',{color:0xcfe6ee,transparent:true,opacity:.18,roughness:.1,depthWrite:false}),POT=mat('pot',{color:0x8a6a4a,roughness:.8}),LEAF=mat('leaf',{color:0x4f8f3a,roughness:.9})
  ;[-7.5,7.5].forEach(x=>{bx(.04,2.4,6.2,GLS,x,1.2,2.2,g,.01);bx(.06,.05,6.2,SH(),x,2.42,2.2,g,.01);bx(.06,.05,6.2,SH(),x,.03,2.2,g,.01)})
- ;[[-6.7,4.5],[6.7,4.5],[-4.4,4.7],[4.4,4.7]].forEach(([x,z])=>{bx(.34,.3,.34,POT,x,.15,z,g,.05);bx(.46,.6,.46,LEAF,x,.6,z,g,.18)})}
+ ;[[-6.7,4.5],[6.7,4.5],[-4.4,4.7],[4.4,4.7]].forEach(([x,z])=>{bx(.34,.3,.34,POT,x,.15,z,g,.05);bx(.46,.6,.46,LEAF,x,.6,z,g,.18)})
+ const WD=mat('shw',{color:0x9a7b55,metalness:0,roughness:.65}),BK=[mat('bk1',{color:0x4f8f3a,roughness:.8}),mat('bk2',{color:0xc9a24a,roughness:.8}),mat('bk3',{color:0x5f7fa8,roughness:.8})]
+ ;[-5.6,5.6].forEach(x=>{bx(1.6,2.1,.4,WD,x,1.05,4.9,g,.02);[.55,1.05,1.55].forEach((y,j)=>{bx(1.5,.04,.36,SH(),x,y,4.9,g,.005);bx(1.3,.3,.3,BK[j],x,y+.17,4.9,g,.02)})})
+ const CK=mat('ckw',{color:0xf4f1ea,roughness:.5});bx(.7,.7,.06,CK,0,2.8,5.12,g,.3);bx(.04,.28,.02,DK(),0,2.9,5.08,g,.005);bx(.22,.04,.02,DK(),.08,2.8,5.08,g,.005)}
 const desk=(b,w,x,z,d=.62)=>{const{g,bx}=b;bx(w,.06,d,SH(),x,.69,z,g,.03);[-1,1].forEach(s=>bx(.06,.66,d-.06,DK(),x+s*(w/2-.1),.33,z,g,.02));bx(w-.3,.4,.03,DK(),x,.5,z+d/2-.03,g,.01)}
 const chair=(b,x,z)=>{const{g,bx,cy,blob}=b;bx(.5,.05,.46,DK(),x,.375,z,g,.05);bx(.46,.34,.05,DK(),x,.62,z-.25,g,.04);cy(.03,.03,.34,MID(),x,.2,z);bx(.5,.04,.06,MID(),x,.05,z,g,.015);bx(.06,.04,.5,MID(),x,.05,z,g,.015);blob(x,z,.5)}
 const typing=(c,t,k=1)=>{const A=c.A;c.H(0,V(A.work0.x+.05*sin(t*7*k),A.work0.y+.012*max(0,sin(t*13*k)),A.work0.z+.02*sin(t*5)));c.H(1,V(A.work1.x+.05*sin(t*6.1*k+1),A.work1.y+.012*max(0,sin(t*11*k)),A.work1.z+.02*sin(t*4.3)))}
