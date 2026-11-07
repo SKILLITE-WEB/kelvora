@@ -13,7 +13,7 @@ const holdIntro=()=>!!document.querySelector('.intro:not(.out)')
 // One owner for the opening + office: Journey calls pose() once per frame and applies the returned overrides.
 export function createOffice(c){
  const {scene,fr,pt,U,L,E,hemi,sun,torso,root,camP,getP,mob,reduced,onPhase}=c
- const M=mob(),SP=M?1.3:1
+ const M=mob(),SP=M?1.9:1.6
  const defs=AGENTS.filter(d=>!M||d.primary),slots={}
  defs.forEach(d=>(slots[d.room]=slots[d.room]||[]).push(d.slot))
  const B=buildRooms({scene,fr,U,slots,mob:M}),rooms=B.rooms,corr=B.corr
@@ -49,7 +49,7 @@ export function createOffice(c){
  const seen=(()=>{try{return sessionStorage.getItem('kv_open')==='1'}catch{return false}})()
  if(reduced||seen||getP()>.015){placeAll();st='ready';setPhase('ready')}else setPhase('greeting')
  const startFlight=fl=>{const a=fl.a;fl.t0=clk;fl.s0=hatchPos();fl.n=hatchNrm();fl.last.copy(fl.s0);fl.yaw=atan2(fl.n.x,fl.n.z)
-  fl.dur=max(1.9,Math.abs(fl.uTo-fl.u0)*L/(M?11:15)+1.0);fl.u=fl.u0;a.flight=fl}
+  fl.dur=max(1.6,Math.abs(fl.uTo-fl.u0)*L/(M?20:26)+.8);fl.u=fl.u0;a.flight=fl}
  const flyAgent=fl=>{const a=fl.a,s=cl((clk-fl.t0)/fl.dur),e=s<.5?2*s*s:1-2*(1-s)*(1-s)
   const u=fl.u0+(fl.uTo-fl.u0)*e,F=fr(u);fl.u=u
   const p=F.p.clone().addScaledVector(F.r,fl.lane*(1-ss(.7,1,s))).add(V(0,1.7+.25*sin(clk*5+fl.ph),0))
@@ -59,7 +59,7 @@ export function createOffice(c){
   a.fly(p,fl.yaw+wrap(a.sl.yaw-fl.yaw)*ss(.9,1,s),.15+.85*ss(0,.14,s),.16*(1-ss(.85,1,s)),.45*(1-ss(.8,1,s)))
   if(s>=1){a.placeHome();a.flight=null;fl.done=true;const r=rooms[a.def.room];if(r.t0==null)r.t0=clk}}
  const playPose=info=>{const A=(a,b)=>ss(a,b,T),rY=info.f.yaw,cy=atan2(camP.x-root.position.x,camP.z-root.position.z)
-  let y=rY;y+=wrap(cy-y)*A(1,2.1);y+=wrap(cy+.7-y)*A(4,5);y+=wrap(rY-y)*A(11.8,13.2)
+  let y=cy;y+=wrap(cy+.7-y)*A(4,5);y+=wrap(rY-y)*A(11.8,13.2)
   const rise=A(5.5,7)*(1-A(11.8,13)),lift=1.5*rise+.035*sin(T*2.2)*rise*A(6.8,7.2);curLift=lift
   const cr=.07*sin(PI*cl((T-4.8)/.8))+.08*sin(PI*cl((T-12.9)/.7))
   const lw=A(.8,1.4)*(1-A(4.3,4.9)),ww=A(2,2.4)*(1-A(3.7,4.1)),sp=A(6,6.8)*(1-A(11.4,12.2))

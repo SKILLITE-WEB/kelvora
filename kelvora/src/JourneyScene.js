@@ -11,8 +11,8 @@ const ss=(a,b,v)=>{const t=cl((v-a)/(b-a));return t*t*(3-2*t)}
 const lerp=(a,b,t)=>a+(b-a)*t
 const wrap=a=>{while(a>PI)a-=2*PI;while(a<-PI)a+=2*PI;return a}
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z)
-const PTS=[[0,0,0],[5,0,10],[-4,.3,20],[-8,.6,32],[2,.9,42],[10,.7,52],[6,.4,62],[-3,.6,72],[-6,1,82],[1,1.2,92],[4,1,102],[-4,.8,112],[-8,.6,122],[0,.4,132],[8,.6,142],[6,.9,152],[-2,1.1,162],[-7,.9,172],[-1,.7,182],[6,.5,192],[3,.4,202]]
-const HW=1.4,DEV_LAT=1.8,ROB_LAT=1.4,STR=.5,LU=.3,LF=.28,T1=.3,T2=.3,FOOT=.07
+const PTS=[[0,0,0],[5,0,10],[-4,0,20],[-8,0,32],[2,0,42],[10,0,52],[6,0,62],[-3,0,72],[-6,0,82],[1,0,92],[4,0,102],[-4,0,112],[-8,0,122],[0,0,132],[8,0,142],[6,0,152],[-2,0,162],[-7,0,172],[-1,0,182],[6,0,192],[3,0,202]]
+const HW=1.0,DEV_LAT=1.8,ROB_LAT=1.3,STR=.62,LU=.3,LF=.28,T1=.3,T2=.3,FOOT=.07
 const gait=ph=>{ph=((ph%1)+1)%1;if(ph<.5)return{x:STR/2-STR*(ph/.5),y:0};const t=(ph-.5)/.5;return{x:-STR/2+STR*(1-cos(PI*t))/2,y:.09*sin(PI*t)}}
 const _e=new THREE.Euler(),_q=new THREE.Quaternion(),_q2=new THREE.Quaternion(),_a=V(),_b=V(),_c=V(),_p=V(),_dn=V(0,-1,0)
 
@@ -55,15 +55,15 @@ const sweep=(segs,m)=>{const pos=[],idx=[];segs.forEach(s=>{const base=pos.lengt
  for(let i=0;i<=N;i++){const f=samp[i];for(let j=0;j<2;j++){const[lat,y]=s[j];pos.push(f.p.x+f.l.x*lat,f.p.y+y,f.p.z+f.l.z*lat)}}
  for(let i=0;i<N;i++){const a=base+i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2)}})
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();geos.push(g);const o=new THREE.Mesh(g,m);scene.add(o);return o}
-const roadM=mk({color:0xc4beb2,metalness:0,roughness:.85}),curbM=mk({color:0x9d978b,metalness:0,roughness:.8})
+const roadM=mk({color:0xa3abb4,metalness:0,roughness:.9}),curbM=mk({color:0x9d978b,metalness:0,roughness:.8})
 const lineM=new THREE.MeshBasicMaterial({color:0xb7b0a2,side:THREE.DoubleSide});mats.push(lineM)
 sweep([[[HW,0],[-HW,0]]],roadM)
-sweep([[[HW,0],[HW-.04,-.3]],[[-HW+.04,-.3],[-HW,0]]],curbM)
-sweep([[[HW-.06,.012],[HW-.14,.012]],[[-HW+.14,.012],[-HW+.06,.012]]],lineM)
+sweep([[[HW,0],[HW-.04,-.3]],[[-HW+.04,-.3],[-HW,0]]],curbM).visible=false;
+sweep([[[HW-.06,.012],[HW-.14,.012]],[[-HW+.14,.012],[-HW+.06,.012]]],lineM).visible=false;
 
 // ---------- world ----------
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mk({color:0xe2ddd2,metalness:0,roughness:1}));geos.push(ground.geometry);ground.rotation.x=-PI/2;ground.position.set(0,-.72,100);scene.add(ground)
-const grid=new THREE.GridHelper(500,250,0xcbc5b8,0xcbc5b8);grid.material.transparent=true;grid.material.opacity=.55;grid.position.set(0,-.71,100);scene.add(grid);geos.push(grid.geometry);mats.push(grid.material)
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mk({color:0xffffff,map:(()=>{const f=tex(128,128,(x,w,h)=>{x.fillStyle='#e6e1d7';x.fillRect(0,0,w,h);x.strokeStyle='#dcd6ca';x.lineWidth=2;x.strokeRect(0,0,w,h)});f.t.wrapS=f.t.wrapT=THREE.RepeatWrapping;f.t.repeat.set(233,233);return f.t})(),metalness:0,roughness:.9}));geos.push(ground.geometry);ground.rotation.x=-PI/2;ground.position.set(0,-.05,100);scene.add(ground)
+const grid=new THREE.GridHelper(500,250,0xcbc5b8,0xcbc5b8);grid.material.transparent=true;grid.material.opacity=.55;grid.position.set(0,-.71,100);grid.visible=false;scene.add(grid);geos.push(grid.geometry);mats.push(grid.material)
 const dm=new THREE.Object3D()
 const lampN=mob()?18:32
 const poleG=new THREE.CylinderGeometry(.03,.03,1.5,8),headG=new THREE.SphereGeometry(.09,10,8);geos.push(poleG,headG)

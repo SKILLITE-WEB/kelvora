@@ -25,7 +25,7 @@ export function buildRooms({scene,fr,U,slots,mob}){
   const wh=mm({color:0xe9ecf6,roughness:.5})
   const add=(w,h,d,m,lat,y,al,r=.03)=>{const o=new THREE.Mesh(gb(w,h,d,r),m);o.position.set(-sd*lat,y,al);G.add(o);return o}
   // architecture: open-sided floor, low back wall, doorway pillars
-  add(3.9,.6,6.6,mm({color:0xd9d3c7,roughness:.75}),3.35,-.32,0,.06)
+  add(3.9,.6,6.6,mm({color:0xc8ab82,roughness:.55}),3.35,-.32,0,.06)
   add(.06,.02,6.6,acc,1.43,-.01,0,.005)
   add(.12,3,6.6,mm({color:0xf4f1ea,roughness:.6}),5.25,1.2,0)
   add(.14,.05,6.6,acc,5.25,2.72,0,.01);add(.14,.05,6.6,acc,5.25,.06,0,.01)
