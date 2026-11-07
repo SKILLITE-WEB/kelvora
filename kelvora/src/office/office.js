@@ -58,7 +58,7 @@ export function createOffice(c){
   const d=p.clone().sub(fl.last);fl.last.copy(p);if(d.lengthSq()>1e-6)fl.yaw+=wrap(atan2(d.x,d.z)-fl.yaw)*.25
   a.fly(p,fl.yaw+wrap(a.sl.yaw-fl.yaw)*ss(.9,1,s),.15+.85*ss(0,.14,s),.16*(1-ss(.85,1,s)),.45*(1-ss(.8,1,s)))
   if(s>=1){a.placeHome();a.flight=null;fl.done=true;const r=rooms[a.def.room];if(r.t0==null)r.t0=clk}}
- const playPose=info=>{const A=(a,b)=>ss(a,b,T),rY=info.f.yaw,cy=atan2(camP.x-root.position.x,camP.z-root.position.z)
+ const playPose=info=>{const A=(a,b)=>ss(a,b,T),rY=info.f.yaw,cy=camP.lengthSq()>1?atan2(camP.x-root.position.x,camP.z-root.position.z):rY+PI/*face-cam*/
   let y=cy;y+=wrap(rY-y)*A(11.8,13.2)
   const rise=A(5.5,7)*(1-A(11.8,13)),lift=1.5*rise+.035*sin(T*2.2)*rise*A(6.8,7.2);curLift=lift
   const cr=.07*sin(PI*cl((T-4.8)/.8))+.08*sin(PI*cl((T-12.9)/.7))
@@ -100,6 +100,7 @@ export function createOffice(c){
    for(let i=0;i<NP;i++){const an=clk*1.6+i*6.2832*3/NP,r=.55+.22*sin(i*1.7),h=((clk*.35+i/NP)%1)*(lift+1.3);a[i*3]=rx+cos(an)*r;a[i*3+1]=gy+h;a[i*3+2]=rz+sin(an)*r}
    pg.attributes.position.needsUpdate=true;pm.opacity=.85*mood;pl.position.set(rx,gy+lift+.7,rz)}
   pl.intensity=22*mood
+  if(st==='ready'&&info.p<.004){const fy=camP.lengthSq()>1?atan2(camP.x-root.position.x,camP.z-root.position.z):info.f.yaw+PI;ov=Object.assign(ov||{},{yaw:fy})}
   return ov}
  const replay=()=>{if(reduced)return
   st='play';T=0;liftV=0;mood=0;hv=0
