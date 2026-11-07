@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
-import {SH,DK,MID,glow} from './chimpuk.js'
+import {SH,DK,MID,glow,mat} from './chimpuk.js'
+const FLOOR=()=>mat('flr',{color:0xd9d3c7,metalness:0,roughness:.8}),WALL=()=>mat('wll',{color:0xf4f1ea,metalness:0,roughness:.7})
 const {PI,sin,max,min,floor}=Math
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z)
 const cl=(v,a=0,b=1)=>min(b,max(a,v))
@@ -35,9 +36,9 @@ function builder(){const g=new THREE.Group(),geo=[],texs=[],scr=[];let ls=-1
  const tick=(t,s)=>{if(t-ls<.12)return;ls=t;scr.forEach(x=>x.draw(t,s))}
  return{g,bx,cy,blob,screen,geo,texs,tick}}
 const room=b=>{const{g,bx}=b
- bx(26,.1,12,MID(),0,-.05,1.5,g,.03)
- const gr=new THREE.GridHelper(26,52,0x39425a,0x39425a);gr.position.set(0,.003,1.5);gr.material.transparent=true;gr.material.opacity=.3;g.add(gr);b.geo.push(gr.geometry);b.texs.push(gr.material)
- bx(26,7,.12,DK(),0,3.4,5.2,g,.02);bx(26,.05,.06,glow(0x38d4ee,1.5),0,2.45,5.12,g,.01);bx(26,.05,.06,glow(0x7c5cff,1.3),0,.35,5.12,g,.01);bx(26,.05,.06,glow(0xb9f45c,.9),0,3.6,5.12,g,.01)}
+ bx(26,.1,12,FLOOR(),0,-.05,1.5,g,.03)
+ const gr=new THREE.GridHelper(26,52,0xcbc5b8,0xcbc5b8);gr.position.set(0,.003,1.5);gr.material.transparent=true;gr.material.opacity=.55;g.add(gr);b.geo.push(gr.geometry);b.texs.push(gr.material)
+ bx(26,7,.12,WALL(),0,3.4,5.2,g,.02);bx(26,.05,.06,glow(0x38d4ee,1.5),0,2.45,5.12,g,.01);bx(26,.05,.06,glow(0x7c5cff,1.3),0,.35,5.12,g,.01);bx(26,.05,.06,glow(0xb9f45c,.9),0,3.6,5.12,g,.01)}
 const desk=(b,w,x,z,d=.62)=>{const{g,bx}=b;bx(w,.06,d,SH(),x,.69,z,g,.03);[-1,1].forEach(s=>bx(.06,.66,d-.06,DK(),x+s*(w/2-.1),.33,z,g,.02));bx(w-.3,.4,.03,DK(),x,.5,z+d/2-.03,g,.01)}
 const chair=(b,x,z)=>{const{g,bx,cy,blob}=b;bx(.5,.05,.46,DK(),x,.375,z,g,.05);bx(.46,.34,.05,DK(),x,.62,z-.25,g,.04);cy(.03,.03,.34,MID(),x,.2,z);bx(.5,.04,.06,MID(),x,.05,z,g,.015);bx(.06,.04,.5,MID(),x,.05,z,g,.015);blob(x,z,.5)}
 const typing=(c,t,k=1)=>{const A=c.A;c.H(0,V(A.work0.x+.05*sin(t*7*k),A.work0.y+.012*max(0,sin(t*13*k)),A.work0.z+.02*sin(t*5)));c.H(1,V(A.work1.x+.05*sin(t*6.1*k+1),A.work1.y+.012*max(0,sin(t*11*k)),A.work1.z+.02*sin(t*4.3)))}
