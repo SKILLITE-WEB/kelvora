@@ -57,6 +57,8 @@ export function buildRooms({scene,fr,U,slots,mob}){
    add(.34,.05,.34,mm({color:0x6b7280,roughness:.8}),2.3,.4,-2.0,.05)}
   // soft rug under the desk area
   add(2.6,.02,4.6,mm({color:0xaeb6c2,roughness:1}),3.6,.005,0,.008)
+  // water cooler
+  add(.4,.9,.4,mm({color:0xf4f1ea,roughness:.5}),4.9,.45,3.0,.04);add(.28,.42,.28,mm({color:0xbfe3f0,transparent:true,opacity:.7,roughness:.1,depthWrite:false}),4.9,1.1,3.0,.1)
   // desks + agent slots (agent faces the road)
   const f=V(-F.r.x*sd,0,-F.r.z*sd),fy=atan2(f.x,f.z),S={}
   const dg=new THREE.CylinderGeometry(.028,.032,.025,18);extra.push(dg)
