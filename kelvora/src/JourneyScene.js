@@ -209,7 +209,7 @@ const state=q=>{const g=TL.s;let u=U[0]-E,pres=0,act=q<g[0].a?0:-1,sd=1
   if(x.k!=='t')sd=sg(x.i)
   if(x.k==='w'){u=U[x.i];pres=1;act=x.i}
   else{u=lerp(x.u0,x.u1,e);if(x.k==='t'){pres=0;act=-1}else if(x.k==='a'){pres=e;act=(e>.5||x.i===0)?x.i:-1}else{pres=1-e;act=e<.5?x.i:-1}}}
- if(q>g[g.length-1].b){const tl=cl((q-TL.total)/TL.total);u=lerp(U[4],1,tl);pres=1-ss(0,.05,tl);act=tl<.02?4:-1;sd=sg(4)}
+ if(q>g[g.length-1].b){u=U[4];pres=1;act=4;sd=sg(4)}
  return{u,pres,act,sd}}
 
 const cache=[];let ps=0,first=true,lastAct=-2,lastDist=0,lastYaw=0,ph=0,W=0,yaw=0,roll=0
