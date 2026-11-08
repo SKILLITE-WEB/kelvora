@@ -19,11 +19,14 @@ export const AGENTS=[
 {id:'a5',room:3,slot:'A',accent:0xb9f45c,role:'designer',seed:67,primary:1},
 {id:'a6',room:3,slot:'C',accent:0x38d4ee,role:'editor',seed:79},
 {id:'a7',room:4,slot:'A',accent:0xffc24a,role:'host',seed:83,primary:1},
-{id:'a8',room:4,slot:'B',accent:0x8a74ff,role:'helper',seed:97}]
+{id:'a8',room:4,slot:'B',accent:0x8a74ff,role:'helper',seed:97},
+{id:'b0',room:0,slot:'D',accent:0x38d4ee,role:'helper',seed:101},{id:'b1',room:1,slot:'D',accent:0xff7ab8,role:'builder',seed:103},{id:'b2',room:2,slot:'D',accent:0xb9f45c,role:'auditor',seed:107},{id:'b3',room:3,slot:'D',accent:0x8a74ff,role:'host',seed:109},{id:'b4',room:4,slot:'D',accent:0x38d4ee,role:'designer',seed:113}]
+const XR_=['auditor','builder','operator','designer','editor','reviewer','helper','host'],XA_=[0xb9f45c,0x38d4ee,0x8a74ff,0xffc24a,0xff7ab8]
+export const XAGENTS=[];for(let r=0;r<8;r++)['A','B','C'].forEach((s,k)=>XAGENTS.push({id:'x'+r+s,room:r,slot:s,accent:XA_[(r+k)%5],role:XR_[(r*3+k*2)%8],seed:200+r*17+k*5,primary:k===0}))
 const WT={work:4,read:2,note:1.4,review:1.2,adjust:1,check:1,think:.9,stretch:.5,organize:.9,sat:.4,tilt:.7,coffee:.6,collab:1.7,deliver:1.5,greet:7,call:.7}
 const ROLE={greeter:{greet:2,tilt:2,work:.6},auditor:{read:2,check:2,review:1.5},reviewer:{note:2,read:1.5,review:2.5},builder:{adjust:2.2,work:1.4},operator:{deliver:2,check:1.4},designer:{organize:2,sat:1.5},editor:{note:1.6,think:1.3},host:{coffee:2,organize:1.4,tilt:1.4,call:1.6},helper:{deliver:2,tilt:1.4}}
 const AM={},AG={}
-const accentMat=c=>AM[c]||(AM[c]=new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.5,roughness:.35,metalness:.2}))
+const accentMat=c=>AM[c]||(AM[c]=new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.9,roughness:.35,metalness:.2}))
 const white=()=>AM.w||(AM.w=new THREE.MeshStandardMaterial({color:0xf4f6ff,roughness:.6}))
 const geo=(k,f)=>AG[k]||(AG[k]=f())
 export const disposeAgentAssets=()=>{Object.values(AM).forEach(m=>m.dispose());Object.values(AG).forEach(g=>g.dispose());for(const k in AM)delete AM[k];for(const k in AG)delete AG[k]}
@@ -36,6 +39,7 @@ export function makeAgent(def,room,scene){
  const b1=new THREE.Mesh(geo('band',()=>new THREE.BoxGeometry(.43,.055,.285)),am);b1.position.set(0,.1,0);rig.torso.add(b1)
  const b2=new THREE.Mesh(geo('hband',()=>new THREE.BoxGeometry(.455,.04,.375)),am);b2.position.set(0,.11,0);rig.head.add(b2)
  const sl=room.slots[def.slot],S={pos:sl.pos.clone(),yaw:sl.yaw,W:0,ph:0,lean:0,tilt:0,nod:0}
+ const own={tempo:.86+((def.seed*37)%100)/100*.3,sway:.6+((def.seed*53)%100)/100*.9,ph:def.seed*.91}
  const sm=[{p:V(),w:0},{p:V(),w:0}],hold=[null,null],lk={p:V(),w:0},tmp=V()
  const c={h:[null,null],hw:[1,1],look:null,lean:0,tilt:0,nod:0,yawT:null}
  const paper={mesh:new THREE.Mesh(geo('paper',()=>new THREE.BoxGeometry(.075,.004,.1)),white()),off:V(0,-.012,.02),target:sl.paperP.clone(),sc:1,timer:0,grow:0}
@@ -52,7 +56,7 @@ export function makeAgent(def,room,scene){
  const P=()=>room.members.find(m=>m!==A&&m.isReady())||null
  const othersWalking=()=>room.members.some(m=>m!==A&&m.isWalking())
  const T_=(t,run,on)=>({t,run,on})
- const typeH=(t,k=1)=>{const q=sl.keys,a=sin(t*5*k)*.012
+ const typeH=(t,k=1)=>{k*=own.tempo;const q=sl.keys,a=sin(t*5*k)*.012
   H(0,V(q.x+sl.h.x*.09+sl.f.x*a,q.y+.012*max(0,sin(t*13*k)),q.z+sl.h.z*.09+sl.f.z*a))
   H(1,V(q.x-sl.h.x*.09-sl.f.x*a,q.y+.012*max(0,sin(t*11*k+1)),q.z-sl.h.z*.09-sl.f.z*a))}
  const rest=w=>{const q=sl.keys;H(0,V(q.x+sl.h.x*.12,q.y,q.z+sl.h.z*.12),w);H(1,V(q.x-sl.h.x*.12,q.y,q.z-sl.h.z*.12),w)}
@@ -122,7 +126,7 @@ export function makeAgent(def,room,scene){
    if(!steps.length)pick()
    const st=steps[si]
    if(st.walk){const tg=st.walk[wi],dx=tg.x-S.pos.x,dz=tg.z-S.pos.z,d=hypot(dx,dz)
-    if(d>.02){moving=true;stepD=min(d,min(.7,.2+d*1.6)*dt);S.pos.x+=dx/d*stepD;S.pos.z+=dz/d*stepD;c.yawT=d>.12?atan2(dx,dz):null}
+    if(d>.02){moving=true;stepD=min(d,min(.7,.2+d*1.6)*own.tempo*dt);S.pos.x+=dx/d*stepD;S.pos.z+=dz/d*stepD;c.yawT=d>.12?atan2(dx,dz):null}
     else if(++wi>=st.walk.length)adv()}
    else{u+=dt/st.t;st.run(min(u,1),time);if(u>=1)adv()}}
   walking=!!(steps[si]&&steps[si].walk)&&!lis
@@ -132,7 +136,7 @@ export function makeAgent(def,room,scene){
   R.position.copy(S.pos);R.rotation.y=S.yaw;rig.pelvis.position.y=Hh+.02
   const gL=gait(S.ph),gR=gait(S.ph+.5)
   rig.legSolve(rig.legs[0],gL.x*S.W,FOOT+gL.y*S.W-Hh);rig.legSolve(rig.legs[1],gR.x*S.W,FOOT+gR.y*S.W-Hh)
-  S.lean+=(c.lean-S.lean)*kk(5);rig.torso.rotation.x=.07*S.W+S.lean
+  S.lean+=(c.lean-S.lean)*kk(5);{const id=1-S.W;rig.torso.rotation.x=.07*S.W+S.lean+.012*sin(time*1.5*own.tempo+own.ph)*id;rig.torso.rotation.z=.03*own.sway*sin(time*.65*own.tempo+own.ph)*id}
   R.updateMatrixWorld(true)
   for(let i=0;i<2;i++){let T=c.h[i],w=T?c.hw[i]:0
    if(!T&&hold[i]){T=rig.torso.localToWorld(tmp.set(i?-.14:.14,.3,.32));w=1}
@@ -143,6 +147,7 @@ export function makeAgent(def,room,scene){
   lk.w+=((c.look?1:0)-lk.w)*kk(5)
   let ty=0,tx=0
   if(lk.w>.01){const l=rig.torso.worldToLocal(tmp.copy(lk.p)).sub(rig.head.position);ty=cl(atan2(l.x,l.z),-1.1,1.1)*lk.w;tx=cl(-atan2(l.y,hypot(l.x,l.z)),-.5,.5)*lk.w}
+  ty+=.09*own.sway*sin(time*.55*own.tempo+own.ph)*(1-lk.w)*(1-S.W)
   S.nod+=(c.nod-S.nod)*kk(10);S.tilt+=(c.tilt-S.tilt)*kk(5)
   const Hd=rig.head.rotation;Hd.y+=(ty-Hd.y)*kk(7);Hd.x+=(tx+S.nod-Hd.x)*kk(7);Hd.z+=(S.tilt-Hd.z)*kk(5)
   rig.eyes.forEach(e=>{e.scale.y=((time+blink)%3.6)>3.5?.1:1})

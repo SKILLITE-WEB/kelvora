@@ -8,7 +8,7 @@ import {getWs} from './state.js'
 const TITLES={control:['Control room','Overview'],ops:['Operations desk','Requests and orders'],workshop:['Workshop','Build and configure'],comms:['Communication station','Messages and collaboration'],analysis:['Analysis workstation','Reports and audits'],desk:['Personal desk','Profile and account']}
 const ICON={control:'🛰',ops:'🧾',workshop:'🛠',comms:'💬',analysis:'📊',desk:'🪑'}
 const SAY={idle:'ambient animation',loading:'loading…',processing:'working on your request…',success:'done',error:'something went wrong, see the message on the page',empty:'nothing here yet'}
-export default function Workspace({kind='control'}){
+function WorkspaceOld({kind='control'}){
  const host=useRef(),api=useRef(null),kr=useRef(kind),sref=useRef(getWs()||'idle');kr.current=kind
  const[fb,setFb]=useState(false),[st,setSt]=useState(sref.current)
  useEffect(()=>{let ov=null,base=getWs()||'idle',tm=0
@@ -59,3 +59,4 @@ export default function Workspace({kind='control'}){
  const t=TITLES[kind]||TITLES.control
  return createPortal(<section className="wsx" aria-label={t[0]}><div className="wsx-cv" ref={host} aria-hidden="true"/>{fb&&<div className="wsx-fb" aria-hidden="true">{ICON[kind]}</div>}
  <div className="wsx-cap"><b>{t[0]}</b><small role="status" aria-live="polite">{t[1]} · {SAY[st]||SAY.idle}</small></div></section>,document.body)}
+/*p2*/export default function Workspace(){return null}

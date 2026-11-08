@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import {buildRooms} from './rooms.js'
-import {makeAgent,AGENTS,disposeAgentAssets} from './agents.js'
+import {makeAgent,AGENTS,XAGENTS,disposeAgentAssets} from './agents.js'
 import {DK} from '../workspace/chimpuk.js'
 const {PI,sin,cos,atan2,min,max,exp,floor}=Math
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z)
@@ -13,13 +13,17 @@ const holdIntro=()=>!!document.querySelector('.intro:not(.out)')
 // One owner for the opening + office: Journey calls pose() once per frame and applies the returned overrides.
 export function createOffice(c){
  const {scene,fr,pt,U,L,E,hemi,sun,torso,root,camP,getP,mob,reduced,onPhase}=c
- const M=mob(),SP=M?1.9:1.6
+ const M=mob(),SP=M?1.9:1.6,H0=hemi.intensity,S0=sun.intensity
  const defs=AGENTS.filter(d=>!M||d.primary),slots={}
  defs.forEach(d=>(slots[d.room]=slots[d.room]||[]).push(d.slot))
  const B=buildRooms({scene,fr,U,slots,mob:M}),rooms=B.rooms,corr=B.corr
  const agents=defs.map(d=>{const a=makeAgent(d,rooms[d.room],scene);rooms[d.room].members.push(a);return a})
  const focus={pos:V(),head:V(),on:false};agents.forEach(a=>{a.focus=focus})
- const fls=agents.map((a,i)=>({a,at:7.2+floor(i/3)*1.5+(i%3)*.25,lane:((i%3)-1)*.55,ph:i*1.7,t0:-1,done:false,u:0,u0:U[0]-E,uTo:U[a.def.room],yaw:0,last:V(),s0:V(),n:V(),home:a.sl.pos,dur:2}))
+ const XU=[0,1,2,3].map(i=>U[i]+(U[i+1]-U[i])*.5).concat([.56,.64,.72,.8]),XS=[-1,1,-1,1,-1,1,-1,1],XN=['Support','Scout','Verified','Portfolio','Dashboard','Admin','Network','Store'],XC=[0x8a74ff,0xffc24a,0x38d4ee,0xff7ab8,0xb9f45c,0x38d4ee,0x8a74ff,0xffc24a]
+ const xd=XAGENTS.filter(d=>!M||d.primary),xs={};xd.forEach(d=>(xs[d.room]=xs[d.room]||[]).push(d.slot))
+ const BX=buildRooms({scene,fr,U:XU,slots:xs,mob:M,names:XN,cols:XC,sides:XS,corr:false})
+ const xa=xd.map(d=>{const a=makeAgent(d,BX.rooms[d.room],scene);BX.rooms[d.room].members.push(a);a.focus=focus;a.placeHome();return a});BX.rooms.forEach(r=>r.setA(1))
+ const fls=agents.map((a,i)=>({a,at:7.2+i*(M?.5:.3),lane:((i%3)-1)*.55,ph:i*1.7,t0:-1,done:false,u:0,u0:U[0]-E,uTo:U[a.def.room],yaw:0,last:V(),s0:V(),n:V(),home:a.sl.pos,dur:2}))
  // ---- deployment bay on Chimpuk's torso (door + glowing aperture)
  const hgm=new THREE.MeshStandardMaterial({color:0x38d4ee,emissive:0x38d4ee,emissiveIntensity:.15,roughness:.4})
  const rimM=new THREE.MeshStandardMaterial({color:0xb9f45c,emissive:0xb9f45c,emissiveIntensity:1.1,roughness:.4})
@@ -89,9 +93,10 @@ export function createOffice(c){
    if(f.t0>=0){flyAgent(f);if(!f.done)wv=max(wv,f.u)}})
   corr.set(all?1:wv+.004)
   rooms.forEach(r=>{r.setA(r.t0==null?.1:ss(0,1.6,clk-r.t0));const cp=r.cup;if(cp&&!cp.holder){cp.mesh.position.lerp(cp.target,1-exp(-dt*8));cp.mesh.rotation.x*=.85}})
-  agents.forEach(a=>{if(a.flight||!a.isReady())return;const near=a.S.pos.distanceTo(camP)<(M?20:28);a.setVisible(near);if(near)a.update(dt,clk)})
+  BX.rooms.forEach(r=>{const cp=r.cup;if(cp&&!cp.holder){cp.mesh.position.lerp(cp.target,1-exp(-dt*8));cp.mesh.rotation.x*=.85}})
+  agents.concat(xa).forEach(a=>{if(a.flight||!a.isReady())return;const near=a.S.pos.distanceTo(camP)<(M?20:28);a.setVisible(near);if(near)a.update(dt,clk)})
   pv.rotation.x=-1.35*hv;hgm.emissiveIntensity=.15+2.2*hv
-  hemi.intensity=.9*(1-.45*mood);sun.intensity=2.1*(1-.4*mood)
+  hemi.intensity=H0*(1-.35*mood);sun.intensity=S0*(1-.3*mood)
   const on=mood>.004;fx.visible=on
   if(on){const gy=info.f.p.y,rx=root.position.x,rz=root.position.z,k=lift/1.5
    beam.position.set(rx,gy+lift/2+.01,rz);beam.scale.set(1,max(.02,lift),1);beamM.opacity=.14*mood*ss(.15,1,k)
@@ -107,6 +112,6 @@ export function createOffice(c){
   fls.forEach(f=>{f.done=false;f.t0=-1});agents.forEach(a=>{a.flight=null;a.reset()})
   rooms.forEach(r=>{r.t0=null;const cp=r.cup;if(cp){cp.holder=null;cp.busy=null;cp.mesh.position.copy(cp.home);cp.target.copy(cp.home);cp.tilt=0;cp.mesh.rotation.x=0}})
   corr.set(0);phase='';setPhase('greeting')}
- const dispose=()=>{hemi.intensity=.9;sun.intensity=2.1;agents.forEach(a=>a.dispose());B.dispose();torso.remove(hg)
+ const dispose=()=>{hemi.intensity=H0;sun.intensity=S0;agents.concat(xa).forEach(a=>a.dispose());B.dispose();BX.dispose();torso.remove(hg)
   ;[bayG,doorG,rimG,beamG,ringG,pg].forEach(g=>g.dispose());[hgm,rimM,beamM,ringM,pm].forEach(m=>m.dispose());scene.remove(fx);scene.remove(pl);disposeAgentAssets()}
  return{pose,replay,skip:toSettle,dispose}}

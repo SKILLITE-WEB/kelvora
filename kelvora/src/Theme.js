@@ -1,5 +1,5 @@
 import {useState,useEffect} from 'react'
-const get=()=>{try{return localStorage.getItem('kv_theme')||'auto'}catch{return 'auto'}}
+const get=()=>{try{return localStorage.getItem('kv_theme')||'dark'}catch{return 'dark'}}
 const eff=m=>m==='auto'?(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):m
 export const apply=m=>{const t=eff(m);document.documentElement.dataset.theme=t;document.querySelector('meta[name=theme-color]')?.setAttribute('content',t==='light'?'#f5f6fb':'#090a10')}
 export function useTheme(){const[m,setM]=useState(get);const[t,setT]=useState(()=>eff(get()))
