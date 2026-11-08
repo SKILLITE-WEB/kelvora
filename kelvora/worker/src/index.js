@@ -1,7 +1,7 @@
 const ADMINS=['bendalehimanshu5@gmail.com','virajrajput07@gmail.com']
-const ORIGINS=['https://kelvora-tech.web.app','https://kelvora-tech.firebaseapp.com','https://kelvorainfortech.com','https://www.kelvorainfortech.com','http://localhost:5173']
+const ORIGINS=['https://kelvora-tech.web.app','https://kelvora-tech.firebaseapp.com','https://kelvorainfotech.com','https://www.kelvorainfotech.com','http://localhost:5173']
 const okOrigin=o=>ORIGINS.includes(o)||/^https:\/\/[a-z0-9-]+\.app\.github\.dev$/.test(o||'')
-const UA='KelvoraScoutBot/1.0 (+https://kelvorainfortech.com)'
+const UA='KelvoraScoutBot/1.0 (+https://kelvorainfotech.com)'
 const SKIP=/facebook|instagram|linkedin|justdial|indiamart|youtube|wikipedia|zomato|swiggy|twitter|x\.com|sulekha|yelp|tripadvisor|google\./i
 const AGENTS='lead reply agent, FAQ/support agent, appointment booking agent, order & payment reminder agent, invoice/document data-entry agent, weekly report agent, review reply agent, social content agent, email triage agent, sales research agent'
 const SYS=`You are Kelvora Scout, an analyst for Kelvora Infotech (custom software, AI agents, marketing agency: social media, video editing, motion graphics).
