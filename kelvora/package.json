@@ -1,1 +1,23 @@
-{"name":"kelvora","private":true,"type":"module","scripts":{"dev":"vite --host","build":"vite build"},"dependencies":{"firebase":"^10.12.0","react":"^18.3.1","react-dom":"^18.3.1","react-router-dom":"^6.23.0","three":"^0.187.0"},"devDependencies":{"@vitejs/plugin-react":"^4.3.0","vite":"^5.2.0"}}
+{
+  "name": "kelvora",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "deploy": "vite build && npx firebase-tools deploy --only hosting",
+    "deploy:rules": "npx firebase-tools deploy --only firestore:rules",
+    "deploy:worker": "cd worker && npx wrangler deploy"
+  },
+  "dependencies": {
+    "firebase": "^10.12.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.23.0",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.0",
+    "vite": "^5.2.0"
+  }
+}

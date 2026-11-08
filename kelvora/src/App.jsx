@@ -1,4 +1,6 @@
 import Nav from './Nav.jsx'
+import SceneHost from './SceneHost.jsx'
+import RouteScene from './RouteScene.jsx'
 import {wsKind} from './workspace/state.js'
 import {lazy as _lz,Suspense as _Su} from 'react'
 const _IH=_lz(()=>import('./Icons3D.jsx'))
@@ -17,6 +19,7 @@ import {Routes,Route,Link,Navigate,useNavigate,useLocation} from 'react-router-d
 import {collection,addDoc,updateDoc,setDoc,doc,serverTimestamp} from 'firebase/firestore'
 import {db,login,useUser,useCol} from './firebase.js'
 import VIDEOS from './videos.js'
+import REELS from './reels.js'
 const AdminPanel=_lz(()=>import('./Admin.jsx')),AgentsPage=_lz(()=>import('./Agents.jsx'))
 const AuditPage=_lz(()=>import('./Scout.jsx').then(m=>({default:m.AuditPage})))
 const BizPage=_lz(()=>import('./Profile.jsx').then(m=>({default:m.BizPage})))
@@ -45,9 +48,14 @@ return <form onSubmit={go}><input required placeholder="Subject" value={s} onCha
 {ok&&<small style={{color:'var(--l)'}}>Sent! Replies will appear in your dashboard.</small>}</form>}
 
 function Portfolio(){const b=useCol('businesses',['verified','==',true])
-return <main className="wrap"><h2><small>Portfolio</small>Our work</h2>
+return <main className="wrap"><h2><small>Portfolio · Websites</small>Websites we built</h2>
 {VIDEOS.length===0&&<p style={{color:'#8a87aa'}}>Showreel coming soon.</p>}
 <div className="grid" style={{gridTemplateColumns:'repeat(auto-fit,minmax(min(320px,100%),1fr))'}}>{VIDEOS.map((v,i)=><div key={i}><Vid v={v}/><p style={{margin:'8px 0 0'}}>{v.title}</p></div>)}</div>
+<h2><small>Portfolio · Marketing</small>Reels and social content</h2>
+<p style={{maxWidth:'60ch',marginBottom:14}}>Short-form video, social media and motion graphics made by our creative team.</p>
+{REELS.length===0&&<p style={{color:'#8a87aa'}}>Reels coming soon.</p>}
+<div className="reels">{REELS.map((v,i)=><div key={i}><Vid v={{...v,reel:1}}/><p style={{margin:'8px 0 0',fontSize:14}}>{v.title}</p></div>)}</div>
+<div className="card glow" style={{marginTop:20}}><h3>Want reels like these for your business?</h3><p>Social media management, reels, video editing and motion graphics by our team.</p><br/><Link className="btn" to="/agents">Request a quote →</Link></div>
 <h2><small>Community</small>Verified businesses</h2><div className="grid">{b.map(x=><div className="card rv" key={x.id}><span className="tag">✓ Verified</span><h3>{x.name}</h3><small>{x.category}</small><p>{x.desc}</p>{cleanUrl(x.link)&&<a href={cleanUrl(x.link)} target="_blank" rel="noreferrer" style={{color:'var(--c)'}}>Visit →</a>}</div>)}</div></main>}
 
 function Store({u}){const s=useCol('services');const[n,setN]=useState('')
@@ -73,9 +81,9 @@ return <main className="wrap"><h2><small>Join</small>Register your business</h2>
 const SK={"/network":"network","/audit":"audit","/store":"growth","/portfolio":"computer","/register":"chat","/agents":"build","/dashboard":"chat","/admin":"servers"}
 function Page({children}){const{pathname}=useLocation();useEffect(()=>{scrollTo({top:0})},[pathname]);return <div key={pathname} className="pg">{['/dashboard','/admin'].includes(pathname)&&<_Su fallback={null}><_IH/></_Su>}{wsKind(pathname)&&<_Su fallback={null}><WS kind={wsKind(pathname)}/></_Su>}{children}</div>}
 export default function App(){const u=useUser();const[w3,setW3]=useState(()=>{try{return localStorage.getItem('kv_3d')!=='off'}catch{return true}})
-return <><div className="bg"><i/><i/><i/></div><World on={w3}/><Toasts/><Intro/>
+return <><World on={w3}/><SceneHost/><RouteScene/><Toasts/><Intro/>
 <Nav u={u}/>
 <Page><_Su fallback={<Spin/>}><Routes><Route path="/" element={<HomeRoot u={u} Contact={Contact} Need={Need}/>}/><Route path="/portfolio" element={<Portfolio/>}/><Route path="/store" element={<Store u={u}/>}/>
 <Route path="/register" element={<Register u={u}/>}/><Route path="/dashboard" element={<Need u={u}><div className="wrap"><Notices u={u}/></div><Dash u={u} Threads={Threads}/></Need>}/>
 <Route path="/admin" element={<Need u={u}><AdminPanel u={u} Threads={Threads}/></Need>}/><Route path="/network" element={<NetworkPage u={u}/>}/><Route path="/business/:id" element={<BizPage u={u}/>}/><Route path="/audit" element={<Need u={u}><AuditPage u={u}/></Need>}/><Route path="/agents" element={<AgentsPage u={u}/>}/><Route path="/profile/:id" element={<Need u={u}><ProfileEditor u={u}/></Need>}/><Route path="*" element={<Navigate to="/"/>}/></Routes></_Su></Page>
-<Tabs u={u}/><Bot u={u}/><footer>© 2026 Kelvora Infotech · kelvorainfortech.com · <a href={PITCH} target="_blank" rel="noreferrer" style={{color:'var(--c)'}}>Watch our pitch ↗</a> · <button className="s tg" onClick={()=>{try{localStorage.setItem('kv_3d',w3?'off':'on')}catch{};location.reload()}}>3D {w3?'on':'off'}</button></footer></>}
+<Tabs u={u}/><Bot u={u}/><footer>© 2026 Kelvora Infotech · kelvorainfotech.com · <a href={PITCH} target="_blank" rel="noreferrer" style={{color:'var(--c)'}}>Watch our pitch ↗</a> · <button className="s tg" onClick={()=>{try{localStorage.setItem('kv_3d',w3?'off':'on')}catch{};location.reload()}}>3D {w3?'on':'off'}</button></footer></>}

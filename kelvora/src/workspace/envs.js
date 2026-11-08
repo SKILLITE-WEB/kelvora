@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
-import {SH,DK,MID,glow} from './chimpuk.js'
+import {SH,DK,MID,glow,mat} from './chimpuk.js'
+const FLOOR=()=>mat('flr',{color:0xd9d3c7,metalness:0,roughness:.8}),WALL=()=>mat('wll',{color:0xf4f1ea,metalness:0,roughness:.7})
 const {PI,sin,max,min,floor}=Math
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z)
 const cl=(v,a=0,b=1)=>min(b,max(a,v))
@@ -34,10 +35,28 @@ function builder(){const g=new THREE.Group(),geo=[],texs=[],scr=[];let ls=-1
   scr.push({draw:(t,s)=>{draw(cx,c.width,c.height,t,s,seed);T.needsUpdate=true}})}
  const tick=(t,s)=>{if(t-ls<.12)return;ls=t;scr.forEach(x=>x.draw(t,s))}
  return{g,bx,cy,blob,screen,geo,texs,tick}}
-const room=b=>{const{g,bx}=b
- bx(26,.1,12,MID(),0,-.05,1.5,g,.03)
- const gr=new THREE.GridHelper(26,52,0x39425a,0x39425a);gr.position.set(0,.003,1.5);gr.material.transparent=true;gr.material.opacity=.3;g.add(gr);b.geo.push(gr.geometry);b.texs.push(gr.material)
- bx(26,7,.12,DK(),0,3.4,5.2,g,.02);bx(26,.05,.06,glow(0x38d4ee,1.5),0,2.45,5.12,g,.01);bx(26,.05,.06,glow(0x7c5cff,1.3),0,.35,5.12,g,.01);bx(26,.05,.06,glow(0xb9f45c,.9),0,3.6,5.12,g,.01)}
+const room=b=>{const{g,bx,cy}=b;const LS=mat('lampS',{color:0xfff1d6,emissive:0xfff1d6,emissiveIntensity:.45,roughness:.6});[-3.2,3.2].forEach(x=>{cy(.2,.2,.04,DK(),x,.02,4.5,g);cy(.03,.03,2.1,MID(),x,1.07,4.5,g);cy(.26,.18,.32,LS,x,2.25,4.5,g)});
+ bx(26,.1,12,FLOOR(),0,-.05,1.5,g,.03);/*xrug*/bx(4.4,.008,3.4,mat('xrug',{color:0xaeb6c2,roughness:1}),0,.004,.3,g,.004)
+ const gr=new THREE.GridHelper(26,52,0xcbc5b8,0xcbc5b8);gr.position.set(0,.003,1.5);gr.material.transparent=true;gr.material.opacity=.55;g.add(gr);b.geo.push(gr.geometry);b.texs.push(gr.material)
+ bx(26,7,.12,WALL(),0,3.4,5.2,g,.02);bx(26,.05,.06,mat('acA',{color:0x9db7c2,roughness:.6}),0,2.45,5.12,g,.01);bx(26,.05,.06,mat('acB',{color:0xb8ad9a,roughness:.6}),0,.35,5.12,g,.01);bx(26,.05,.06,mat('acC',{color:0x8fae7a,roughness:.6}),0,3.6,5.12,g,.01)
+ const GLS=mat('gls',{color:0xcfe6ee,transparent:true,opacity:.18,roughness:.1,depthWrite:false}),POT=mat('pot',{color:0x8a6a4a,roughness:.8}),LEAF=mat('leaf',{color:0x4f8f3a,roughness:.9})
+ ;[-7.5,7.5].forEach(x=>{bx(.04,2.4,6.2,GLS,x,1.2,2.2,g,.01);bx(.06,.05,6.2,SH(),x,2.42,2.2,g,.01);bx(.06,.05,6.2,SH(),x,.03,2.2,g,.01)})
+ ;[[-6.7,4.5],[6.7,4.5],[-4.4,4.7],[4.4,4.7]].forEach(([x,z])=>{bx(.5,.45,.5,POT,x,.22,z,g,.07);bx(.7,.95,.7,LEAF,x,.9,z,g,.25)})
+ const WD=mat('shw',{color:0x9a7b55,metalness:0,roughness:.65}),BK=[mat('bk1',{color:0x4f8f3a,roughness:.8}),mat('bk2',{color:0xc9a24a,roughness:.8}),mat('bk3',{color:0x5f7fa8,roughness:.8})]
+ ;[-5.6,5.6].forEach(x=>{bx(2.2,3.0,.5,WD,x,1.5,4.85,g,.02);[.75,1.5,2.25].forEach((y,j)=>{bx(2.1,.05,.46,SH(),x,y,4.85,g,.005);bx(1.8,.42,.38,BK[j],x,y+.24,4.85,g,.02)})})
+ const CK=mat('ckw',{color:0xf4f1ea,roughness:.5});bx(.7,.7,.06,CK,0,2.8,5.12,g,.3);bx(.04,.28,.02,DK(),0,2.9,5.08,g,.005);bx(.22,.04,.02,DK(),.08,2.8,5.08,g,.005)}
+const extras=(b,kind)=>{const{g,bx,cy}=b
+ const OAK=mat('xoak',{color:0xb99b74,roughness:.6}),WH=mat('xwh',{color:0xf4f1ea,roughness:.5}),GRY=mat('xgr',{color:0x6b7280,roughness:.8}),FAB=mat('xfab',{color:0x7d8b97,roughness:.9}),LF=mat('xlf',{color:0x4f8f3a,roughness:.9}),PT=mat('xpt',{color:0x8a6a4a,roughness:.8})
+ const NT=[mat('xn1',{color:0xffd27a,roughness:.8}),mat('xn2',{color:0x9ad0ec,roughness:.8}),mat('xn3',{color:0xf4a6b8,roughness:.8}),mat('xn4',{color:0x8fae7a,roughness:.8})]
+ const plant=(x,z,s)=>{bx(.5*s,.45*s,.5*s,PT,x,.22*s,z,g,.07);bx(.8*s,1.1*s,.8*s,LF,x,1*s,z,g,.28)}
+ const sofa=(x,z)=>{const o=x>0?.45:-.45;bx(1.0,.42,2.2,FAB,x,.21,z,g,.1);bx(.28,.62,2.2,FAB,x+o,.55,z,g,.09)}
+ const table=(x,z)=>{bx(1.2,.05,1.2,OAK,x,.72,z,g,.4);cy(.05,.05,.7,DK(),x,.35,z,g);[[-.9,0],[.9,0],[0,-.9],[0,.9]].forEach(([a,c])=>bx(.46,.06,.46,GRY,x+a,.45,z+c,g,.06))}
+ if(kind==='control'){bx(3,1.2,.06,WH,0,1.7,5.08,g,.02);[[-1.1,1.95],[-.4,1.5],[.5,1.9],[1.1,1.45],[0,2.1]].forEach(([x,y],i)=>bx(.3,.22,.02,NT[i%4],x,y,5.04,g,.005));sofa(-6.2,2.5);plant(6.4,2.5,1.4)}
+ if(kind==='ops'){[-1.4,1.4].forEach(x=>{bx(.9,1.4,.5,GRY,x,.7,4.95,g,.03);[.35,.7,1.05].forEach(y=>bx(.7,.03,.02,WH,x,y,4.69,g,.005))});bx(1.2,.05,.7,WH,-5.4,.8,2.6,g,.02);[-.5,.5].forEach(a=>bx(.06,.78,.06,DK(),-5.4+a,.39,2.6,g,.01));bx(.5,.25,.4,GRY,-5.4,.95,2.6,g,.03);plant(5.6,2.6,1.3)}
+ if(kind==='workshop'){bx(3,.08,.8,OAK,0,.9,4.3,g,.02);[-1.3,1.3].forEach(x=>bx(.08,.86,.7,DK(),x,.43,4.3,g,.01));bx(3,1.2,.05,GRY,0,1.9,5.1,g,.02);[-1.1,-.5,.1,.7,1.2].forEach((x,i)=>bx(.12,.4,.04,NT[i%4],x,1.9,5.05,g,.01));plant(6.2,3.0,1.2)}
+ if(kind==='comms'){table(-5.4,2.8);table(5.4,2.8)}
+ if(kind==='analysis'){[-2,0,2].forEach((x,i)=>{bx(1.6,1.0,.05,WH,x,1.7,5.08,g,.02);[0,1,2,3].forEach(j=>bx(.2,.2+((i+j)%3)*.18,.02,NT[(i+j)%4],x-.5+j*.33,1.35+(.2+((i+j)%3)*.18)/2,5.04,g,.005))});table(5.4,2.8)}
+ if(kind==='desk'){sofa(-6.2,2.6);plant(6.4,2.6,1.4);bx(.6,.05,.6,OAK,-4.9,.5,2.6,g,.02);cy(.04,.04,.48,DK(),-4.9,.25,2.6,g)}}
 const desk=(b,w,x,z,d=.62)=>{const{g,bx}=b;bx(w,.06,d,SH(),x,.69,z,g,.03);[-1,1].forEach(s=>bx(.06,.66,d-.06,DK(),x+s*(w/2-.1),.33,z,g,.02));bx(w-.3,.4,.03,DK(),x,.5,z+d/2-.03,g,.01)}
 const chair=(b,x,z)=>{const{g,bx,cy,blob}=b;bx(.5,.05,.46,DK(),x,.375,z,g,.05);bx(.46,.34,.05,DK(),x,.62,z-.25,g,.04);cy(.03,.03,.34,MID(),x,.2,z);bx(.5,.04,.06,MID(),x,.05,z,g,.015);bx(.06,.04,.5,MID(),x,.05,z,g,.015);blob(x,z,.5)}
 const typing=(c,t,k=1)=>{const A=c.A;c.H(0,V(A.work0.x+.05*sin(t*7*k),A.work0.y+.012*max(0,sin(t*13*k)),A.work0.z+.02*sin(t*5)));c.H(1,V(A.work1.x+.05*sin(t*6.1*k+1),A.work1.y+.012*max(0,sin(t*11*k)),A.work1.z+.02*sin(t*4.3)))}
@@ -52,7 +71,7 @@ const AP_T=V(0,.1,0),AP_W=V(0,0,-.18)
 const grabAt=(c,u,k,p,ap)=>{const h=V(p.x,p.y+.03,p.z-.05).addScaledVector(ap,(1-ss(0,.35,u))+1.5*ss(.55,.95,u));c.H(0,h,ss(0,.2,u));c.see(p);c.lean=.06*(1-ss(.8,1,u));if(u>.42&&k.held<0){c.grab(k,0);return k.held===0}return false}
 const placeAt=(c,u,k,S,ap)=>{const h=V(S.x,S.y+.03,S.z-.05).addScaledVector(ap,(1-ss(0,.45,u))+1.5*ss(.5,.8,u));c.H(0,h,1-ss(.6,.9,u));c.see(S);if(u>.5&&k.held>=0){c.drop(k,S);return true}return false}
 // ---------- seated workspaces: control / comms / analysis / desk ----------
-function seated(kind){const b=builder(),{g,bx,cy,blob,screen}=b;room(b);blob(0,0,.55)
+function seated(kind){const b=builder(),{g,bx,cy,blob,screen}=b;room(b);extras(b,kind);blob(0,0,.55)
  const W={control:2.6,comms:2.4,analysis:2.8,desk:1.8}[kind];desk(b,W,0,.6);chair(b,0,-.02)
  bx(.5,.03,.18,DK(),0,.735,.46,g,.012);bx(.38,.006,.02,glow(0x38d4ee,1.2),0,.752,.55,g,.003)
  const cx={control:.62,comms:.62,analysis:.95,desk:.7}[kind],dx={control:-.62,comms:-.62,analysis:.5,desk:-.7}[kind],dh={control:1,comms:1,analysis:0,desk:1}[kind]
@@ -96,7 +115,7 @@ function seated(kind){const b=builder(),{g,bx,cy,blob,screen}=b;room(b);blob(0,0
   update:(t,s)=>{dial.rotation.y=env.turn*4;if(bars)bars.forEach((m,i)=>{const h=.1+.22*(.5+.5*sin(t*(s==='processing'?2.5:.4)+i));m.scale.y=h;m.position.y=.77+h/2});b.tick(t,s)}}
  return finish(env)}
 // ---------- ops desk (standing): inbox → console → outbox ----------
-function ops(){const b=builder(),{g,bx,screen}=b;room(b)
+function ops(){const b=builder(),{g,bx,screen}=b;room(b);extras(b,'ops')
  const tbl=(x,w)=>{bx(w,.06,.5,SH(),x,.8,.55,g,.03);[-1,1].forEach(s=>bx(.06,.77,.44,DK(),x+s*(w/2-.07),.385,.55,g,.02))}
  tbl(2.1,.9);tbl(0,1.3);tbl(-2.1,.9);bx(.5,.025,.18,DK(),0,.845,.46,g,.01);bx(.42,.02,.3,DK(),2.1,.842,.46,g,.01);bx(.7,.02,.3,DK(),-2.1,.842,.46,g,.01)
  const sm=new THREE.MeshStandardMaterial({color:0xb9f45c,emissive:0xb9f45c,emissiveIntensity:.5,roughness:.4});b.texs.push(sm);bx(.36,.012,.24,sm,0,.842,.54,g,.005)
@@ -127,7 +146,7 @@ function ops(){const b=builder(),{g,bx,screen}=b;room(b)
    cards.forEach(k=>{k.mesh.visible=s!=='empty'||k.held>=0});sm.emissiveIntensity=.5+(t-env.flashT<.2?2:0);b.tick(t,s)}}
  return finish(env)}
 // ---------- workshop (standing): shelf → machines → bench ----------
-function workshop(){const b=builder(),{g,bx,cy,blob,screen}=b;room(b)
+function workshop(){const b=builder(),{g,bx,cy,blob,screen}=b;room(b);extras(b,'workshop')
  const tbl=(x,w)=>{bx(w,.06,.5,SH(),x,.8,.55,g,.03);[-1,1].forEach(s=>bx(.06,.77,.44,DK(),x+s*(w/2-.07),.385,.55,g,.02))}
  tbl(0,1.5);bx(.5,.025,.18,DK(),0,.845,.46,g,.01);screen(1.2,.7,0,1.45,.85,0,SC.queue,0,.83)
  const tidy=[V(.45,.86,.55),V(-.45,.86,.55),V(.15,.86,.62),V(-.2,.86,.62)];tidy.forEach((p,i)=>bx(.1,.04,.06,i%2?DK():glow(0x7c5cff,.7),p.x,.85,p.z,g,.01))

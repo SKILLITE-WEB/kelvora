@@ -1,7 +1,7 @@
 import {useState,useEffect} from 'react'
 export function Vid({v}){const[p,s]=useState(false)
-if(p||!v.clip)return <div className="vid"><iframe loading="lazy" allow="autoplay;fullscreen" allowFullScreen src={v.yt?`https://www.youtube.com/embed/${v.yt}?autoplay=${p?1:0}`:`https://drive.google.com/file/d/${v.drive}/preview`}/></div>
-return <div className="vid pv" onClick={()=>s(true)}><video src={v.clip} autoPlay muted loop playsInline/><span className="play">▶ Watch full video</span></div>}
+if(p||!v.clip)return <div className={'vid'+(v.reel?' reel':'')}><iframe loading="lazy" allow="autoplay;fullscreen" allowFullScreen src={v.yt?`https://www.youtube.com/embed/${v.yt}?autoplay=${p?1:0}`:`https://drive.google.com/file/d/${v.drive}/preview`}/></div>
+return <div className={'vid pv'+(v.reel?' reel':'')} onClick={()=>s(true)}><video src={v.clip} autoPlay muted loop playsInline/><span className="play">▶ Watch full video</span></div>}
 const Count=({to,suf=''})=>{const[n,setN]=useState(0);useEffect(()=>{let i=0;const t=setInterval(()=>{i++;setN(Math.round(to*Math.min(i/60,1)));if(i>=60)clearInterval(t)},25);return()=>clearInterval(t)},[to]);return <>{n}{suf}</>}
 export default function Showcase(){return <section><h2><small>Live demos</small>See it in action.</h2>
 <div className="grid" style={{gridTemplateColumns:'repeat(auto-fit,minmax(290px,1fr))'}}>

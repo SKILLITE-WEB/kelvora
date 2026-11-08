@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import {getEnv} from './Robot3D.jsx'
 import {TL,U,E} from './journeyTL.js'
+import {createOffice} from './office/office.js'
 const ACC=0xb9f45c
 const {PI,sin,cos,atan2,sqrt,min,max,abs,acos,hypot,floor,exp}=Math
 const cl=(v,a=0,b=1)=>min(b,max(a,v))
@@ -10,8 +11,8 @@ const ss=(a,b,v)=>{const t=cl((v-a)/(b-a));return t*t*(3-2*t)}
 const lerp=(a,b,t)=>a+(b-a)*t
 const wrap=a=>{while(a>PI)a-=2*PI;while(a<-PI)a+=2*PI;return a}
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z)
-const PTS=[[0,0,0],[5,0,10],[-4,.3,20],[-8,.6,32],[2,.9,42],[10,.7,52],[6,.4,62],[-3,.6,72],[-6,1,82],[1,1.2,92],[4,1,102],[-4,.8,112],[-8,.6,122],[0,.4,132],[8,.6,142],[6,.9,152],[-2,1.1,162],[-7,.9,172],[-1,.7,182],[6,.5,192],[3,.4,202]]
-const HW=1.4,DEV_LAT=1.8,ROB_LAT=1.4,STR=.5,LU=.3,LF=.28,T1=.3,T2=.3,FOOT=.07
+const PTS=[[0,0,0],[5,0,10],[-4,0,20],[-8,0,32],[2,0,42],[10,0,52],[6,0,62],[-3,0,72],[-6,0,82],[1,0,92],[4,0,102],[-4,0,112],[-8,0,122],[0,0,132],[8,0,142],[6,0,152],[-2,0,162],[-7,0,172],[-1,0,182],[6,0,192],[3,0,202]]
+const HW=1.0,DEV_LAT=1.8,ROB_LAT=1.3,STR=.62,LU=.3,LF=.28,T1=.3,T2=.3,FOOT=.07
 const gait=ph=>{ph=((ph%1)+1)%1;if(ph<.5)return{x:STR/2-STR*(ph/.5),y:0};const t=(ph-.5)/.5;return{x:-STR/2+STR*(1-cos(PI*t))/2,y:.09*sin(PI*t)}}
 const _e=new THREE.Euler(),_q=new THREE.Quaternion(),_q2=new THREE.Quaternion(),_a=V(),_b=V(),_c=V(),_p=V(),_dn=V(0,-1,0)
 
@@ -21,22 +22,24 @@ let renderer
 try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'})}catch{return null}
 const geos=[],mats=[],texs=[]
 const mob=()=>host.clientWidth<760
-let dpr=min(devicePixelRatio||1,mob()?1.5:2),lost=false
-renderer.setPixelRatio(dpr);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05
+/*q-low*/const LOWQ=(navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4
+let dpr=min(devicePixelRatio||1,LOWQ?1:mob()?1.5:2),lost=false
+renderer.setPixelRatio(dpr);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08
 host.appendChild(renderer.domElement)
 const onLost=e=>{e.preventDefault();lost=true;if(onFail)onFail()}
 renderer.domElement.addEventListener('webglcontextlost',onLost)
-const BG=0x090b11,scene=new THREE.Scene();scene.background=new THREE.Color(BG);scene.fog=new THREE.Fog(BG,14,mob()?46:68)
+const BG=0x05060d,scene=new THREE.Scene();scene.background=new THREE.Color(BG);scene.fog=new THREE.Fog(BG,12,mob()?42:62)
 const cam=new THREE.PerspectiveCamera(40,1,.1,120),env=getEnv()
-scene.add(new THREE.HemisphereLight(0xbfc8ff,0x0a0b10,.9))
-const sun=new THREE.DirectionalLight(0xffffff,2.1);scene.add(sun,sun.target)
+const hemi=new THREE.HemisphereLight(0x8fa2ff,0x1a1030,.8);scene.add(hemi)
+const sun=new THREE.DirectionalLight(0xb4c2ff,1.6);scene.add(sun,sun.target)
+const fillL=new THREE.PointLight(0x7fa8ff,9,9),roomL=new THREE.PointLight(0x38d4ee,0,16),magL=new THREE.PointLight(0xd23fa0,0,13);scene.add(fillL,roomL);if(!LOWQ)scene.add(magL)
 
 // ---------- helpers ----------
 const mk=o=>{const m=new THREE.MeshPhysicalMaterial({envMap:env,envMapIntensity:1,side:THREE.DoubleSide,...o});mats.push(m);return m}
 const GL=()=>{const m=new THREE.MeshStandardMaterial({color:ACC,emissive:ACC,emissiveIntensity:1.6,roughness:.4});mats.push(m);return m}
 const SH=mk({color:0xf1f3fa,metalness:.2,roughness:.22,clearcoat:1,clearcoatRoughness:.08})
 const DK=mk({color:0x1b1e29,metalness:.8,roughness:.32,clearcoat:.5})
-const MID=mk({color:0x2b3040,metalness:.6,roughness:.4})
+const MID=mk({color:0x2a3148,metalness:.5,roughness:.42})
 const add=(g,m,x,y,z,par)=>{geos.push(g);const o=new THREE.Mesh(g,m);o.position.set(x,y,z);par.add(o);return o}
 const rb=(w,h,d,r,m,x,y,z,par)=>add(new RoundedBoxGeometry(w,h,d,3,min(r,min(w,h,d)/2)),m,x,y,z,par)
 const cy=(a,b,h,m,x,y,z,par)=>add(new THREE.CylinderGeometry(a,b,h,22),m,x,y,z,par)
@@ -54,21 +57,63 @@ const sweep=(segs,m)=>{const pos=[],idx=[];segs.forEach(s=>{const base=pos.lengt
  for(let i=0;i<=N;i++){const f=samp[i];for(let j=0;j<2;j++){const[lat,y]=s[j];pos.push(f.p.x+f.l.x*lat,f.p.y+y,f.p.z+f.l.z*lat)}}
  for(let i=0;i<N;i++){const a=base+i*2;idx.push(a,a+1,a+2,a+1,a+3,a+2)}})
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();geos.push(g);const o=new THREE.Mesh(g,m);scene.add(o);return o}
-const roadM=mk({color:0x20242f,metalness:.25,roughness:.55}),curbM=mk({color:0x12141c,metalness:.5,roughness:.5})
-const lineM=new THREE.MeshBasicMaterial({color:ACC,side:THREE.DoubleSide});mats.push(lineM)
+const roadM=mk({color:0x0b0e19,metalness:.55,roughness:.26}),curbM=mk({color:0x161c30,metalness:0,roughness:.8})
+const lineM=new THREE.MeshBasicMaterial({color:0x38d4ee,side:THREE.DoubleSide});mats.push(lineM)
 sweep([[[HW,0],[-HW,0]]],roadM)
-sweep([[[HW,0],[HW-.04,-.3]],[[-HW+.04,-.3],[-HW,0]]],curbM)
-sweep([[[HW-.06,.012],[HW-.14,.012]],[[-HW+.14,.012],[-HW+.06,.012]]],lineM)
+sweep([[[HW,0],[HW-.04,-.3]],[[-HW+.04,-.3],[-HW,0]]],curbM).visible=false;
+sweep([[[HW-.06,.012],[HW-.14,.012]],[[-HW+.14,.012],[-HW+.06,.012]]],lineM);
 
 // ---------- world ----------
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mk({color:0x0b0d14,metalness:0,roughness:1}));geos.push(ground.geometry);ground.rotation.x=-PI/2;ground.position.set(0,-.72,100);scene.add(ground)
-const grid=new THREE.GridHelper(500,250,0x2a3140,0x2a3140);grid.material.transparent=true;grid.material.opacity=.4;grid.position.set(0,-.71,100);scene.add(grid);geos.push(grid.geometry);mats.push(grid.material)
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(700,700),mk({color:0xffffff,map:(()=>{const f=tex(128,128,(x,w,h)=>{x.fillStyle='#070912';x.fillRect(0,0,w,h);x.strokeStyle='#12304a';x.lineWidth=2;x.strokeRect(0,0,w,h)});f.t.wrapS=f.t.wrapT=THREE.RepeatWrapping;f.t.repeat.set(233,233);return f.t})(),metalness:.5,roughness:.45}));geos.push(ground.geometry);ground.rotation.x=-PI/2;ground.position.set(0,-.05,100);scene.add(ground)
+const grid=new THREE.GridHelper(500,250,0xcbc5b8,0xcbc5b8);grid.material.transparent=true;grid.material.opacity=.55;grid.position.set(0,-.71,100);grid.visible=false;scene.add(grid);geos.push(grid.geometry);mats.push(grid.material)
 const dm=new THREE.Object3D()
+let ceilL=null
+/*shell*/{const WL=mk({color:0x0b0e1a,metalness:.2,roughness:.7}),BS=mk({color:0x161c30,metalness:.3,roughness:.6}),CE=mk({color:0x06070e,metalness:0,roughness:1,side:THREE.FrontSide})
+ const GLW=mk({color:0x0d2038,transparent:true,opacity:.16,metalness:.1,roughness:.05,depthWrite:false})
+ const nbm=c=>{const m=new THREE.MeshBasicMaterial({color:c});mats.push(m);return m},NCY=nbm(0x38d4ee),NMG=nbm(0xd23fa0)
+ const X0=-30,X1=32,Z0=-24,Z1=228,BH=6.2,cx=(X0+X1)/2,cz=(Z0+Z1)/2,BW=X1-X0,BD=Z1-Z0,LOW=1.6
+ bx(BW,BH,.3,WL,cx,BH/2,Z0,scene);bx(BW,BH,.3,WL,cx,BH/2,Z1,scene)
+ ;[X0,X1].forEach(X=>{bx(.3,LOW,BD,WL,X,LOW/2,cz,scene);bx(.12,BH-LOW,BD,GLW,X,LOW+(BH-LOW)/2,cz,scene);bx(.06,.05,BD,X<0?NCY:NMG,X+(X<0?.2:-.2),LOW+.03,cz,scene);bx(.06,.05,BD,X<0?NMG:NCY,X+(X<0?.2:-.2),BH-.08,cz,scene)})
+ bx(BW,.05,.06,NCY,cx,LOW+.03,Z0+.2,scene);bx(BW,.05,.06,NMG,cx,LOW+.03,Z1-.2,scene)
+ bx(BW,1.1,.34,BS,cx,.55,Z0,scene);bx(BW,1.1,.34,BS,cx,.55,Z1,scene)
+ const cg=new THREE.PlaneGeometry(BW,BD);geos.push(cg);const ce=new THREE.Mesh(cg,CE);ce.rotation.x=PI/2;ce.position.set(cx,BH,cz);scene.add(ce)
+ // window mullions
+ {const mg=new THREE.BoxGeometry(.16,BH-LOW,.16);geos.push(mg);const mmM=mk({color:0x1a2240,metalness:.6,roughness:.4});const nz=29,mi=new THREE.InstancedMesh(mg,mmM,nz*2);let k=0
+  for(let i=0;i<nz;i++){const z=Z0+8+i*(BD-16)/(nz-1);[X0+.1,X1-.1].forEach(X=>{dm.position.set(X,LOW+(BH-LOW)/2,z);dm.rotation.set(0,0,0);dm.scale.set(1,1,1);dm.updateMatrix();mi.setMatrixAt(k++,dm.matrix)})}
+  mi.frustumCulled=false;scene.add(mi)}
+ // neon ceiling strips
+ const pg=new THREE.BoxGeometry(2.6,.04,.14);geos.push(pg);const pm=new THREE.MeshBasicMaterial({color:0xffffff});mats.push(pm)
+ const cols=[-22,-8,6,20],rows=[];for(let z=0;z<=224;z+=6)rows.push(z)
+ const lp=new THREE.InstancedMesh(pg,pm,cols.length*rows.length);let n=0
+ const cA=new THREE.Color(0x38d4ee).multiplyScalar(.55),cB=new THREE.Color(0x8a74ff).multiplyScalar(.5)
+ cols.forEach((x,ci)=>rows.forEach((z,ri)=>{dm.position.set(x,BH-.05,z);dm.rotation.set(0,0,0);dm.scale.set(1,1,1);dm.updateMatrix();lp.setMatrixAt(n,dm.matrix);lp.setColorAt(n,(ci+ri)%2?cB:cA);n++}))
+ lp.frustumCulled=false;scene.add(lp);ceilL=lp
+ // skyline outside the glass
+ {const sc=document.createElement('canvas');sc.width=64;sc.height=256;const x=sc.getContext('2d');x.fillStyle='#070a14';x.fillRect(0,0,64,256)
+  let sd=7;const rn=()=>{sd=(sd*16807)%2147483647;return sd/2147483647}
+  for(let r=0;r<32;r++)for(let c=0;c<8;c++){if(rn()<.42){const q=rn();x.fillStyle=q<.55?'#2b9fc0':q<.8?'#7a63e8':'#d23fa0';x.globalAlpha=.35+rn()*.65;x.fillRect(c*8+1,r*8+2,5,4)}}
+  const st=new THREE.CanvasTexture(sc);st.colorSpace=THREE.SRGBColorSpace;texs.push(st)
+  const sm=new THREE.MeshBasicMaterial({map:st,fog:false});mats.push(sm)
+  const bgG=new THREE.BoxGeometry(1,1,1);geos.push(bgG);const NS=mob()?40:84,sk=new THREE.InstancedMesh(bgG,sm,NS);let r2=11;const R=()=>{r2=(r2*16807)%2147483647;return r2/2147483647}
+  for(let i=0;i<NS;i++){const side=i%2?1:-1,w=6+R()*8,h=16+R()*46,d=6+R()*8,x0=side*(X1+8+R()*60)+(side<0?-62+62:0),z0=Z0+(i/NS)*(BD+20)+R()*8
+   dm.position.set(side<0?X0-8-R()*60:x0,h/2-.1,z0);dm.rotation.set(0,0,0);dm.scale.set(w,h,d);dm.updateMatrix();sk.setMatrixAt(i,dm.matrix)}
+  sk.frustumCulled=false;scene.add(sk);dm.scale.set(1,1,1)}
+}
+// bench-props
+{const BM=mk({color:0x222a42,metalness:.5,roughness:.4}),BL=mk({color:0x0e1220,metalness:.5,roughness:.5}),BG_=new THREE.MeshBasicMaterial({color:0x38d4ee});mats.push(BG_)
+ for(let i=0;i<4;i++)for(const tt of[.22,.78]){const f=fr(U[i]+(U[i+1]-U[i])*tt);for(const sd of[1,-1]){const G=new THREE.Group();G.position.copy(f.p).addScaledVector(f.l,sd*(HW+1.8));G.rotation.y=f.yaw;scene.add(G)
+  bx(.5,.07,1.4,BM,0,.45,0,G);bx(.5,.35,.07,BM,sd*.22,.7,0,G);[[-.2,-.6],[-.2,.6],[.2,-.6],[.2,.6]].forEach(([x,z])=>bx(.06,.45,.06,BL,x,.22,z,G));bx(.4,.015,1.2,BG_,0,.15,0,G)}}}
+{const pG=new THREE.CylinderGeometry(.4,.32,.6,14),lG=new THREE.SphereGeometry(.6,14,10);geos.push(pG,lG)
+ const pot=new THREE.InstancedMesh(pG,mk({color:0x1c2338,metalness:.5,roughness:.45}),40),leaf=new THREE.InstancedMesh(lG,mk({color:0x1fbf94,emissive:0x0b6b55,emissiveIntensity:.7,metalness:0,roughness:.8}),40)
+ let n=0;for(let i=0;i<4;i++){for(const fr0 of [.18,.34,.66,.82]){const f=fr(U[i]+(U[i+1]-U[i])*fr0);for(const sd of [1,-1]){
+  dm.position.copy(f.p).addScaledVector(f.l,sd*(HW+.9));dm.position.y+=.3;dm.rotation.set(0,0,0);dm.scale.set(1,1,1);dm.updateMatrix();pot.setMatrixAt(n,dm.matrix)
+  dm.position.y+=.9;dm.scale.set(1,1.3,1);dm.updateMatrix();leaf.setMatrixAt(n,dm.matrix);n++}}}
+ pot.count=leaf.count=n;scene.add(pot,leaf);dm.scale.set(1,1,1)}
 const lampN=mob()?18:32
 const poleG=new THREE.CylinderGeometry(.03,.03,1.5,8),headG=new THREE.SphereGeometry(.09,10,8);geos.push(poleG,headG)
-const poles=new THREE.InstancedMesh(poleG,DK,lampN),heads=new THREE.InstancedMesh(headG,lineM,lampN);scene.add(poles,heads)
+const poles=new THREE.InstancedMesh(poleG,DK,lampN),heads=new THREE.InstancedMesh(headG,lineM,lampN);scene.add(poles,heads);poles.visible=false;heads.visible=false
 for(let i=0;i<lampN;i++){const f=fr(.03+.95*i/(lampN-1));dm.position.copy(f.p).addScaledVector(f.l,HW+.35);dm.position.y+=.75;dm.updateMatrix();poles.setMatrixAt(i,dm.matrix);dm.position.y+=.8;dm.updateMatrix();heads.setMatrixAt(i,dm.matrix)}
-const NB=mob()?70:140,bg=new THREE.BoxGeometry(1,1,1);geos.push(bg)
+const NB=0,bg=new THREE.BoxGeometry(1,1,1);geos.push(bg)
 const boxes=new THREE.InstancedMesh(bg,mk({color:0x151a26,metalness:.35,roughness:.6,envMapIntensity:.5}),NB);scene.add(boxes)
 let placed=0,guard=0
 while(placed<NB&&guard++<3000){const x=(Math.random()-.5)*90,z=-12+Math.random()*230;let dmin=1e9
@@ -76,7 +121,7 @@ while(placed<NB&&guard++<3000){const x=(Math.random()-.5)*90,z=-12+Math.random()
  if(dmin<8)continue
  const w=1.5+Math.random()*3.5,h=1+Math.random()*8,d=1.5+Math.random()*3.5
  dm.position.set(x,-.72+h/2,z);dm.scale.set(w,h,d);dm.updateMatrix();boxes.setMatrixAt(placed++,dm.matrix)}
-boxes.count=placed;dm.scale.set(1,1,1)
+boxes.count=placed;boxes.visible=false;dm.scale.set(1,1,1)
 
 // ---------- stations (each with its own purposeful action) ----------
 const d0=D=>{
@@ -171,6 +216,9 @@ const sc=document.createElement('canvas');sc.width=sc.height=128
 const shT=new THREE.CanvasTexture(sc);texs.push(shT)
 const blobM=new THREE.MeshBasicMaterial({map:shT,transparent:true,depthWrite:false});mats.push(blobM)
 const blob=add(new THREE.PlaneGeometry(.9,.9),blobM,0,0,0,scene);blob.rotation.x=-PI/2
+const thM=new THREE.MeshBasicMaterial({color:0x38d4ee,transparent:true,opacity:.7,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide});mats.push(thM)
+const flame=add(new THREE.ConeGeometry(.09,.36,14,1,true),thM,0,.1,0,root);flame.rotation.x=PI
+const pad=add(new THREE.RingGeometry(.22,.36,32),thM,0,0,0,scene);pad.rotation.x=-PI/2
 
 const legSolve=(lg,tz,ty)=>{const dist=hypot(tz,ty),d=min(max(dist,.15),T1+T2-.003),k=dist>0?d/dist:1;tz*=k;ty*=k
  const th=atan2(tz,-ty),A=acos(cl((T1*T1+d*d-T2*T2)/(2*T1*d),-1,1)),t1=th+A
@@ -198,36 +246,55 @@ const state=q=>{const g=TL.s;let u=U[0]-E,pres=0,act=q<g[0].a?0:-1,sd=1
   if(x.k!=='t')sd=sg(x.i)
   if(x.k==='w'){u=U[x.i];pres=1;act=x.i}
   else{u=lerp(x.u0,x.u1,e);if(x.k==='t'){pres=0;act=-1}else if(x.k==='a'){pres=e;act=(e>.5||x.i===0)?x.i:-1}else{pres=1-e;act=e<.5?x.i:-1}}}
- if(q>g[g.length-1].b){const tl=cl((q-TL.total)/TL.total);u=lerp(U[4],1,tl);pres=1-ss(0,.05,tl);act=tl<.02?4:-1;sd=sg(4)}
+ if(q>g[g.length-1].b){u=U[4];pres=1;act=4;sd=sg(4)}
  return{u,pres,act,sd}}
 
-const cache=[];let ps=0,first=true,lastAct=-2,lastDist=0,lastYaw=0,ph=0,W=0,yaw=0,roll=0
+const SPD=14,uOf=x=>{if(x<=1)return state(x*TL.total).u;const tp=cl(x-1),a=ss(.03,.09,tp),b=cl((tp-.09)/.71),c=ss(.8,.88,tp);return U[4]+.006*a+(.9-U[4]-.012)*b+.006*c}
+const cache=[];let pv=0,ps=0,first=true,lastAct=-2,lastDist=0,lastYaw=0,ph=0,W=0,mv=0,yaw=0,roll=0
 const camP=V(),camL=V()
+const _o0=V(),_o1=V()
+const office=createOffice({scene,fr,pt,U,L,E,hemi,sun,torso,root,camP,getP,mob,reduced,onPhase:api.onPhase||(()=>{})})
+/*tail*/const UE=.9,FG=new THREE.Group();
+{const f=fr(UE),P=FG;FG.position.copy(f.p).addScaledVector(f.r,1);FG.rotation.y=f.yaw;scene.add(FG)
+ bx(1.4,.06,.62,SH,0,.69,.6,P);[-.64,.64].forEach(x=>bx(.06,.66,.56,DK,x,.33,.6,P));bx(1.1,.4,.03,DK,0,.5,.88,P)
+ bx(.5,.03,.18,DK,0,.735,.46,P);bx(.38,.006,.02,GL(),0,.752,.55,P);bx(.05,.3,.05,DK,0,.87,.86,P);bx(.9,.54,.04,DK,0,1.1,.88,P)
+ const T=tex(256,160,(x,w,h)=>{x.fillStyle='#0b0d14';x.fillRect(0,0,w,h);x.fillStyle='#161a26';x.fillRect(0,0,w,18);for(let i=0;i<6;i++){const v=20+(i*37)%70;x.fillStyle=i%2?'#38d4ee':'#b9f45c';x.fillRect(18+i*38,h-14-v,24,v)}})
+ const sm=new THREE.MeshBasicMaterial({map:T.t});mats.push(sm);add(new THREE.PlaneGeometry(.8,.46),sm,0,1.1,.855,P).rotation.y=PI
+ bx(.5,.05,.46,DK,0,.375,-.02,P);bx(.46,.34,.05,DK,0,.62,-.27,P);cy(.03,.03,.34,DK,0,.2,-.02,P);bx(.5,.04,.06,DK,0,.05,-.02,P);bx(.06,.04,.5,DK,0,.05,-.02,P)
+ bx(2.2,.01,2.2,mk({color:0x141a33,metalness:.3,roughness:.8}),0,.005,.4,P)}
+const tail=(s,tp)=>{const a=ss(.03,.09,tp),b=cl((tp-.09)/.71),c=ss(.8,.88,tp);if(tp>.03)s.act=-1
+ s.pres=tp<.5?1-a:0;s.sd=1;s.lat=c;s.u=U[4]+.006*a+(UE-U[4]-.012)*b+.006*c;return ss(.87,.96,tp)}
 const frame=(dt,t)=>{
  const kk=r=>1-exp(-dt*r)
  let p=getP()
  if(reduced){let bi=0,bd=9;TL.w.forEach((g,i)=>{const d=abs(p*TL.total-(g.a+g.b)/2);if(d<bd){bd=d;bi=i}});const g=TL.w[bi];p=(g.a+.85*(g.b-g.a))/TL.total;ps=p}
- else ps=first?p:ps+(p-ps)*kk(9)
- const q=ps*TL.total,s=state(q)
+ else if(first){ps=p;pv=0}
+ else{const dl=p-ps;if(abs(dl)<1e-5){ps=p;pv=0}else{const e=.004,u0=uOf(ps),du=max(abs(uOf(cl(ps+e,0,2))-u0),abs(u0-uOf(cl(ps-e,0,2))))/e,cap=cl(SPD/(L*max(du,.001)),.004,.25)
+  pv+=(cl(dl*7,-cap,cap)-pv)*kk(9);pv=cl(pv,-cap,cap);const np=ps+pv*dt;if((p-ps)*(p-np)<0){ps=p;pv=0}else ps=np}}
+ /*sw*/const q=ps*TL.total,s=state(q),tp=reduced?0:cl(ps-1),sw=tp>0?tail(s,tp):0,cw=ss(.78,.9,tp)
  if(s.act!==lastAct){lastAct=s.act;if(onStation)onStation(s.act)}
  const outs=devs.map((fn,i)=>{const wv=cl((q-TL.w[i].a)/(TL.w[i].b-TL.w[i].a)),c=cache[i];if(c&&c.w===wv)return c.o;const o=fn(wv);cache[i]={w:wv,o};return o})
- const out=(s.act>=0&&outs[s.act])||{}
+ let out=(s.act>=0&&outs[s.act])||{}
  const f=fr(s.u),pres=s.pres,sd=s.sd
- root.position.copy(f.p).addScaledVector(f.r,ROB_LAT*pres*sd)
+ const ov=office.pose(dt,t,{p,s,f});if(ov&&ov.out)out=Object.assign({},out,ov.out)
+ root.position.copy(f.p).addScaledVector(f.r,ROB_LAT*pres*sd+(s.lat||0));if(ov)root.position.y+=ov.lift||0;const hov=(.3+.035*sin(t*2.3))*(1-sw);root.position.y+=hov
  const dist=s.u*L,dd=first?0:dist-lastDist;lastDist=dist
- W+=((reduced?0:(abs(dd)/max(dt,.001)>.12?1:0))-W)*kk(10)
+ mv+=((reduced?0:cl(abs(dd)/max(dt,.001)/7,0,1))-mv)*kk(8);W=0
  ph+=cl(dd,-1.5,1.5)/(2*STR)
  let yt=f.yaw-PI/2*pres*sd
  if(out.faceCam){const cyaw=atan2(camP.x-root.position.x,camP.z-root.position.z);yt+=wrap(cyaw-yt)*out.faceCam}
- yaw=first?yt:yaw+wrap(yt-yaw)*kk(9);root.rotation.y=yaw
+ if(ov&&ov.yaw!=null)yt=ov.yaw;yaw=first?yt:yaw+wrap(yt-yaw)*kk(9);root.rotation.y=yaw
  const yr=first?0:wrap(f.yaw-lastYaw)/max(dt,.001);lastYaw=f.yaw
- roll+=(cl(-yr*.08,-.12,.12)*W-roll)*kk(6);pelvis.rotation.z=roll
+ roll+=(cl(-yr*.08,-.12,.12)*mv-roll)*kk(6);pelvis.rotation.z=roll
  const gL=gait(ph),gR=gait(ph+.5),cr=out.crouch||0
- const Hh=.59-cr+.018*W*cos(4*PI*(ph-.25));pelvis.position.y=Hh+.02
- legSolve(legs[0],gL.x*W,FOOT+gL.y*W-Hh);legSolve(legs[1],gR.x*W,FOOT+gR.y*W-Hh)
- torso.rotation.x=.07*W+(out.lean||0)
+ const Hh=(.59-cr+.018*W*cos(4*PI*(ph-.25)))*(1-sw)+.45*sw;pelvis.position.y=Hh+.02
+ const tk=(ov?(ov.tuck||0):0)+.16*(1-sw);legSolve(legs[0],gL.x*W*(1-sw)+.26*sw,FOOT+gL.y*W*(1-sw)-Hh+tk);legSolve(legs[1],gR.x*W*(1-sw)+.26*sw,FOOT+gR.y*W*(1-sw)-Hh+tk)
+ torso.rotation.x=.07*W+(out.lean||0)+.06*sw+.012*sin(t*1.6)+.22*mv*(dd>=0?1:-.6)
  root.updateMatrixWorld(true)
- arm(arms[0],.5*W*gL.x/(STR/2),out.lT,out.lW||0);arm(arms[1],.5*W*gR.x/(STR/2),out.rT,out.rW||0)
+ const wv=ov&&ov.arms;let T0=out.lT,w0=out.lW||0,T1=out.rT,w1=out.rW||0
+ if(wv){if(wv[0]){T0=root.localToWorld(_o0.set(wv[0][0],wv[0][1],wv[0][2]));w0=wv[0][3]}if(wv[1]){T1=root.localToWorld(_o1.set(wv[1][0],wv[1][1],wv[1][2]));w1=wv[1][3]}}
+ if(sw>.02){const kz=.775+.012*max(0,sin(t*13));T0=root.localToWorld(_o0.set(.14+.05*sin(t*7),kz,.46));w0=sw;T1=root.localToWorld(_o1.set(-.14+.05*sin(t*6.1+1),.775+.012*max(0,sin(t*11)),.46));w1=sw}
+ arm(arms[0],-.3*mv+.07*sin(t*2),T0,w0);arm(arms[1],-.3*mv+.07*sin(t*2+1.3),T1,w1)
  let ty=0,tx=0;const lk=out.lookCam?camP:out.look
  if(lk&&out.lookW>.01){const l=torso.worldToLocal(_a.copy(lk)).sub(head.position);ty=cl(atan2(l.x,l.z),-1.1,1.1)*out.lookW;tx=cl(-atan2(l.y,hypot(l.x,l.z)),-.5,.5)*out.lookW}
  else{const f2=fr(min(1,s.u+.02));ty=cl(wrap(f2.yaw-f.yaw)*.8,-.6,.6)*(1-pres)}
@@ -239,13 +306,18 @@ const frame=(dt,t)=>{
  const camA=cb.clone();camA.y+=1.95*M
  const ahead=pt(min(1,s.u+.015));ahead.y+=.5
  const lookA=V(rp.x,rp.y+.75,rp.z).lerp(ahead,.4)
- const camB=V(rp.x,rp.y+1.55*M,rp.z).addScaledVector(f.h,-3*M).addScaledVector(f.r,.3*sd)
- const lookB=V(rp.x,rp.y+.95,rp.z).addScaledVector(f.r,.55*sd)
- const camT=camA.lerp(camB,pres),lookT=lookA.lerp(lookB,pres);camT.y=max(camT.y,f.p.y+.9)
+ const rs=V().copy(f.r).multiplyScalar(sd),hf=.3640*cam.aspect,wide=cam.aspect>1.15,dV=cl((wide?3.9:3.5)/(hf*(wide?.6:1)),8.5,17),el=wide?.42:.6,shf=wide?.4*hf*dV:0
+const Cc=V(f.p.x,f.p.y+.9,f.p.z).addScaledVector(rs,3.3),camB=Cc.clone().addScaledVector(rs,-dV*cos(el)).addScaledVector(f.h,shf);camB.y=Cc.y+dV*sin(el)
+const lookB=Cc.clone().addScaledVector(f.h,shf);lookB.y-=.25
+const camT=camA.lerp(camB,pres),lookT=lookA.lerp(lookB,pres);camT.y=max(camT.y,f.p.y+.9);if(ov&&ov.cam){camT.addScaledVector(f.h,-ov.cam.back);camT.y+=ov.cam.up;lookT.y+=ov.cam.look;lookT.addScaledVector(f.h,ov.cam.ahead||0)}
+ if(cw>.001){const cs=V(rp.x,rp.y+1.9*M,rp.z).addScaledVector(f.h,1.9*M).addScaledVector(f.r,-1.4*M),ls=V(rp.x,rp.y+.8,rp.z).addScaledVector(f.h,.3);camT.lerp(cs,cw);lookT.lerp(ls,cw)}
  const dv=V().subVectors(lookT,camT),lf=V(dv.z,0,-dv.x).normalize()
- if(cam.aspect>1.15)lookT.addScaledVector(lf,1.25*M*sideOf(s.u));else lookT.y-=cl(camT.distanceTo(lookT)*.12,.3,.7)
+ if(cam.aspect>1.15)lookT.addScaledVector(lf,1.25*M*sideOf(s.u)*(1-pres));else lookT.y-=cl(camT.distanceTo(lookT)*.12,.3,.7)
  if(first){camP.copy(camT);camL.copy(lookT)}else{camP.lerp(camT,kk(6));camL.lerp(lookT,kk(7))}
- cam.position.copy(camP);cam.lookAt(camL)
+ cam.position.copy(camP);cam.lookAt(camL);if(ceilL)ceilL.visible=camP.y<6
+ flame.scale.set(1,(.7+.6*mv+.15*sin(t*31))*(1-sw)+.001,1);flame.visible=sw<.9;thM.opacity=.5+.3*mv;pad.position.set(rp.x,f.p.y+.02,rp.z);pad.scale.setScalar(1+.25*sin(t*2.3)+hov*.6);pad.visible=sw<.9
+ fillL.position.set(rp.x,rp.y+2.4,rp.z);fillL.intensity=7+5*(1-pres)
+ roomL.position.set(f.p.x+rs.x*3.3,f.p.y+3.4,f.p.z+rs.z*3.3);roomL.intensity=34*pres;magL.position.set(f.p.x-rs.x*2.2,f.p.y+2.2,f.p.z-rs.z*2.2);magL.intensity=11*pres
  sun.position.set(rp.x-5,rp.y+10,rp.z+4);sun.target.position.copy(rp);blob.position.set(rp.x,f.p.y+.015,rp.z)
  first=false}
 
@@ -255,13 +327,13 @@ const loop=now=>{raf=requestAnimationFrame(loop);const raw=(now-last)/1000;last=
  if(document.hidden||lost)return
  if(!visible()){first=true;return}
  if(reduced&&!needs)return
- if(!reduced&&!needs&&now-act>1600&&now-lr<120)return
+ if(!reduced&&!needs&&now-act>1600&&now-lr<(mob()?50:33))return
  lr=now
- needs=false;frame(reduced?10:min(.05,raw),now/1000);renderer.render(scene,cam)
+ needs=false;frame(reduced?10:min(.05,raw),now/1000);renderer.render(scene,cam);if(!reduced&&abs(getP()-ps)>2e-4)act=now
  if(!reduced){acc+=raw;n++;if(n===90){if(!warm&&acc/90>.026&&dpr>1){dpr=1;renderer.setPixelRatio(1);size()}warm=false;acc=0;n=0}}}
 const onScroll=()=>{needs=true;act=performance.now()}
 const ro=new ResizeObserver(size);ro.observe(host);size()
 addEventListener('scroll',onScroll,{passive:true})
 raf=requestAnimationFrame(loop)
-return{dispose(){cancelAnimationFrame(raf);ro.disconnect();removeEventListener('scroll',onScroll);renderer.domElement.removeEventListener('webglcontextlost',onLost)
- geos.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());texs.forEach(t=>t.dispose());boxes.dispose();poles.dispose();heads.dispose();renderer.dispose();renderer.forceContextLoss&&renderer.forceContextLoss();renderer.domElement.remove()}}}
+return{replay:()=>office.replay(),skip:()=>office.skip(),dispose(){office.dispose();cancelAnimationFrame(raf);ro.disconnect();removeEventListener('scroll',onScroll);renderer.domElement.removeEventListener('webglcontextlost',onLost)
+ scene.remove(fillL,roomL,magL);geos.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());texs.forEach(t=>t.dispose());boxes.dispose();poles.dispose();heads.dispose();renderer.dispose();renderer.forceContextLoss&&renderer.forceContextLoss();renderer.domElement.remove()}}}

@@ -3,3 +3,15 @@ dist
 .firebase
 worker/node_modules
 worker/.wrangler
+KELVORA_FULL_CODE.txt
+KELVORA_FULL_CODE.txt
+KELVORA_FULL_CODE.prev.txt
+.env
+.env.*
+sa.json
+*.pem
+worker/.dev.vars
+.bak*
+.bak_*/
+KELVORA_FULL_CODE*.txt
+kelvora_all.txt

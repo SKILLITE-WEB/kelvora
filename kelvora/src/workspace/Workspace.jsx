@@ -8,7 +8,7 @@ import {getWs} from './state.js'
 const TITLES={control:['Control room','Overview'],ops:['Operations desk','Requests and orders'],workshop:['Workshop','Build and configure'],comms:['Communication station','Messages and collaboration'],analysis:['Analysis workstation','Reports and audits'],desk:['Personal desk','Profile and account']}
 const ICON={control:'🛰',ops:'🧾',workshop:'🛠',comms:'💬',analysis:'📊',desk:'🪑'}
 const SAY={idle:'ambient animation',loading:'loading…',processing:'working on your request…',success:'done',error:'something went wrong, see the message on the page',empty:'nothing here yet'}
-export default function Workspace({kind='control'}){
+function WorkspaceOld({kind='control'}){
  const host=useRef(),api=useRef(null),kr=useRef(kind),sref=useRef(getWs()||'idle');kr.current=kind
  const[fb,setFb]=useState(false),[st,setSt]=useState(sref.current)
  useEffect(()=>{let ov=null,base=getWs()||'idle',tm=0
@@ -23,18 +23,18 @@ export default function Workspace({kind='control'}){
   if(off){setFb(true);return}
   let r;try{r=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'})}catch{setFb(true);return}
   const mob=innerWidth<800,rm=matchMedia('(prefers-reduced-motion:reduce)').matches
-  let dpr=Math.min(devicePixelRatio||1,mob?1.25:1.75);r.setPixelRatio(dpr);r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=1.05
+  /*q-low*/let dpr=Math.min(devicePixelRatio||1,((navigator.hardwareConcurrency||8)<=4||(navigator.deviceMemory||8)<=4)?1:mob?1.25:1.75);r.setPixelRatio(dpr);r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=.92
   el.appendChild(r.domElement);document.body.classList.add('wsp')
-  const BG=0x090b11,scene=new THREE.Scene();scene.background=new THREE.Color(BG);scene.fog=new THREE.Fog(BG,9,22)
+  const BG=0xece8e0,scene=new THREE.Scene();scene.background=new THREE.Color(BG);scene.fog=new THREE.Fog(BG,9,22)
   const cam=new THREE.PerspectiveCamera(32,1,.1,60)
-  scene.add(new THREE.HemisphereLight(0xbfc8ff,0x0a0b10,.9))
+  scene.add(new THREE.HemisphereLight(0xfff4e6,0xb4ad9f,.95))
   const sun=new THREE.DirectionalLight(0xffffff,2.1);sun.position.set(-3,6,-3);scene.add(sun)
-  const p1=new THREE.PointLight(0xb9f45c,25,12);p1.position.set(2,2.2,-1);const p2=new THREE.PointLight(0x7c5cff,35,12);p2.position.set(-2.5,2,1.5);scene.add(p1,p2)
+  const p1=new THREE.PointLight(0xfff1d6,18,12);p1.position.set(2,2.2,-1);const p2=new THREE.PointLight(0xdfe8ff,18,12);p2.position.set(-2.5,2,1.5);scene.add(p1,p2)
   const rig=makeChimpuk();scene.add(rig.root)
   const PN=mob?50:110,pg=new THREE.BufferGeometry(),pp=new Float32Array(PN*3)
   for(let i=0;i<PN;i++){pp[i*3]=(Math.random()-.5)*14;pp[i*3+1]=Math.random()*4;pp[i*3+2]=Math.random()*7-1}
   pg.setAttribute('position',new THREE.BufferAttribute(pp,3))
-  const pm=new THREE.PointsMaterial({color:0xb9f45c,size:.028,transparent:true,opacity:.55,depthWrite:false}),pts=new THREE.Points(pg,pm);scene.add(pts)
+  const pm=new THREE.PointsMaterial({color:0xb9f45c,size:.028,transparent:true,opacity:0,depthWrite:false}),pts=new THREE.Points(pg,pm)
   const drift=dt=>{for(let i=0;i<PN;i++){pp[i*3+1]+=dt*(.08+(i%5)*.03);if(pp[i*3+1]>4)pp[i*3+1]=0}pg.attributes.position.needsUpdate=true;p1.position.x=2+Math.sin(T*.4)*3;p2.position.x=-2.5+Math.cos(T*.35)*3}
   let env=null,brain=null,state=sref.current,raf=0,vis=true,lost=false,last=performance.now(),acc=0,n=0,warm=true,w=1,h=1,T=0
   const F=new THREE.Vector3()
@@ -59,3 +59,4 @@ export default function Workspace({kind='control'}){
  const t=TITLES[kind]||TITLES.control
  return createPortal(<section className="wsx" aria-label={t[0]}><div className="wsx-cv" ref={host} aria-hidden="true"/>{fb&&<div className="wsx-fb" aria-hidden="true">{ICON[kind]}</div>}
  <div className="wsx-cap"><b>{t[0]}</b><small role="status" aria-live="polite">{t[1]} · {SAY[st]||SAY.idle}</small></div></section>,document.body)}
+/*p2*/export default function Workspace(){return null}
